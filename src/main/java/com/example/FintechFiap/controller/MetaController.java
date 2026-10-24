@@ -1,0 +1,44 @@
+package com.example.FintechFiap.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.FintechFiap.model.Meta;
+import com.example.FintechFiap.service.MetaService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/metas")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class MetaController {
+
+    private final MetaService metaService;
+
+    @PostMapping("/usuario/{usuarioId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Meta criar(@PathVariable String usuarioId, @RequestBody Meta meta) {
+        return metaService.criar(usuarioId, meta);
+    }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public List<Meta> listarPorUsuario(@PathVariable String usuarioId) {
+        return metaService.listarPorUsuario(usuarioId);
+    }
+
+    @GetMapping("/{id}")
+    public Meta buscarPorId(@PathVariable String id) {
+        return metaService.buscarPorId(id);
+    }
+
+}
