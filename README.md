@@ -238,3 +238,182 @@ CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
 * Integração completa entre a camada *View* (ReactJS + Bootstrap) e a API *Model* (Java + Oracle).
 * Consolidação do **Chatbot com IA** para atendimento e consultoria financeira ao usuário.
 * Execução da bateria de testes de software, validação de qualidade e entrega final do projeto.
+
+---
+
+## 7. Como Executar a API Backend (Java 21 + Spring Boot + Oracle)
+
+### 7.1 Pré-requisitos e Configuração de Variáveis (`.env`)
+1. **Java JDK 21** instalado (`java -version` e `javac -version`).
+2. Na raiz do projeto (`FintechFiap/`), crie um arquivo `.env` (ignorado pelo Git) com suas credenciais do banco Oracle da FIAP:
+   ```properties
+   DB_USERNAME=rmXXXXXX
+   DB_PASSWORD=sua_senha_fiap
+   ```
+3. Inicie o servidor Spring Boot utilizando o Maven Wrapper:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+4. Acesse a documentação interativa **Swagger UI** no navegador:
+   👉 **`http://localhost:8080/swagger-ui.html`**
+
+---
+
+### 7.2 Mapa de Endpoints da API REST
+
+| Recurso | Método HTTP | Rota (`Endpoint`) | Descrição |
+| :--- | :---: | :--- | :--- |
+| **Usuários** | `POST` | `/api/usuarios` | Cadastra um novo usuário no Oracle (`201 Created`) |
+| **Usuários** | `GET` | `/api/usuarios/{id}` | Busca os dados de um usuário pelo UUID |
+| **Metas** | `POST` | `/api/metas/usuario/{usuarioId}` | Cria um objetivo financeiro / Reserva de Emergência |
+| **Metas** | `GET` | `/api/metas/usuario/{usuarioId}` | Lista todas as metas de um usuário |
+| **Metas** | `GET` | `/api/metas/{id}` | Busca uma meta específica pelo UUID |
+| **Transações** | `POST` | `/api/transacoes/usuario/{usuarioId}` | Registra transação e **aciona o Motor de Custo de Oportunidade** se for `GASTO_LIVRE` |
+| **Transações** | `GET` | `/api/transacoes/usuario/{usuarioId}` | Lista o extrato completo de transações do usuário |
+| **Custo de Oportunidade** | `GET` | `/api/transacoes/usuario/{usuarioId}/custos-oportunidade` | Lista os logs calculados (Dias de Atraso + Valor Futuro Perdido em Juros Compostos) |
+| **Dívidas** | `POST` | `/api/dividas/usuario/{usuarioId}` | Registra uma dívida ou parcelamento do usuário |
+| **Dívidas** | `GET` | `/api/dividas/usuario/{usuarioId}` | Lista todas as dívidas do usuário |
+| **Dívidas** | `GET` | `/api/dividas/{id}` | Busca uma dívida específica pelo UUID |
+| **Investimentos** | `POST` | `/api/investimentos/usuario/{usuarioId}` | Cadastra um ativo de Renda Fixa ou Renda Variável na carteira |
+| **Investimentos** | `GET` | `/api/investimentos/usuario/{usuarioId}` | Lista a carteira de investimentos do usuário |
+| **Investimentos** | `GET` | `/api/investimentos/{id}` | Busca um investimento específico pelo UUID |
+
+---
+
+## 8. Roteiro de Testes Homologados (Swagger UI + Oracle FIAP)
+
+Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no banco **Oracle 19c da FIAP**, validando a persistência relacional e o cálculo automático do **Motor de Custo de Oportunidade**.
+
+> **⚠️ Atenção no Swagger UI:** Ao clicar em *"Try it out"* nos métodos `POST`, substitua todo o JSON de exemplo gerado pelo Swagger pelos payloads abaixo (não envie o campo `"id": "string"`, pois o Hibernate gera o UUID automaticamente no `INSERT`).
+
+### Passo 1 — Criar Usuário (`POST /api/usuarios`)
+
+**Payload enviado (`Request Body`):**
+```json
+{
+  "nome": "João Gabriel",
+  "email": "joao@opportunity.com.br",
+  "senhaHash": "123456",
+  "dataNascimento": "2002-05-25",
+  "sexo": "MASCULINO",
+  "renda": 5000.00,
+  "rendaVariavel": false,
+  "perfilInvestidor": "MODERADO",
+  "diaFechamento": 5
+}
+```
+* **Resultado:** `201 Created` — Usuário persistido na `TB_FIN_USUARIO` com UUID gerado (`da354833-b0ea-425a-b2aa-c9127c31d002`).
+
+---
+
+### Passo 2 — Cadastrar Meta Financeira (`POST /api/metas/usuario/{usuarioId}`)
+
+* **Parâmetro `usuarioId`:** `da354833-b0ea-425a-b2aa-c9127c31d002`
+
+**Payload enviado (`Request Body`):**
+```json
+{
+  "meta": "Reserva de Emergência",
+  "valorAlvo": 15000.00,
+  "valorAtual": 3000.00,
+  "aporteMensal": 1500.00,
+  "dataAlvo": "2028-10-24",
+  "prioridade": 1,
+  "taxaRendimentoAnual": 12.00,
+  "reservaEmergencia": true
+}
+```
+* **Resultado:** `201 Created` — Meta persistida na `TB_FIN_META` com UUID `e811dc30-fa6a-4224-9759-7f8d8755db38` (Aporte planejado: R$ 1.500,00/mês = **R$ 50,00/dia** | Rendimento estimado: **12% a.a.** = **1% a.m.**).
+
+---
+
+### Passo 3 — Lançar um Gasto Livre (`POST /api/transacoes/usuario/{usuarioId}`)
+
+* **Parâmetro `usuarioId`:** `da354833-b0ea-425a-b2aa-c9127c31d002`
+
+**Payload enviado (`Request Body`):**
+```json
+{
+  "descricao": "Costelinha na brasa de sábado",
+  "valorTransacao": 150.00,
+  "tipoTransacao": "GASTO_LIVRE",
+  "categoria": "LAZER",
+  "dataTransacao": "2026-10-24"
+}
+```
+* **Resultado:** `201 Created` — Transação salva na `TB_FIN_TRANSACAO` (`df79b11d-2d11-4805-92e5-e507587e74a6`). Ao detectar `tipoTransacao == GASTO_LIVRE`, a camada `TransacaoService` disparou automaticamente o cálculo de impacto e gravou o registro na tabela `TB_FIN_LOG_OPORTUNIDADE`.
+
+---
+
+### Passo 4 — Consultar Custo de Oportunidade Calculado (`GET /api/transacoes/usuario/{usuarioId}/custos-oportunidade`)
+
+* **Parâmetro `usuarioId`:** `da354833-b0ea-425a-b2aa-c9127c31d002`
+
+**Resposta Real Retornada pela API (`200 OK`):**
+```json
+[
+  {
+    "id": "0d475719-e04d-4d53-9174-20a527859d25",
+    "transacao": {
+      "id": "df79b11d-2d11-4805-92e5-e507587e74a6",
+      "usuario": {
+        "id": "da354833-b0ea-425a-b2aa-c9127c31d002",
+        "nome": "João Gabriel",
+        "email": "joao@opportunity.com.br",
+        "dataNascimento": "2002-05-25",
+        "sexo": "MASCULINO",
+        "senhaHash": "123456",
+        "renda": 5000,
+        "rendaVariavel": false,
+        "perfilInvestidor": "MODERADO",
+        "dataCriacao": null,
+        "diaFechamento": 5,
+        "hibernateLazyInitializer": {}
+      },
+      "descricao": "Costelinha na brasa de sábado",
+      "valorTransacao": 150,
+      "tipoTransacao": "GASTO_LIVRE",
+      "categoria": "LAZER",
+      "dataTransacao": "2026-10-24",
+      "hibernateLazyInitializer": {}
+    },
+    "metaImpactada": {
+      "id": "e811dc30-fa6a-4224-9759-7f8d8755db38",
+      "usuario": {
+        "id": "da354833-b0ea-425a-b2aa-c9127c31d002",
+        "nome": "João Gabriel",
+        "email": "joao@opportunity.com.br",
+        "dataNascimento": "2002-05-25",
+        "sexo": "MASCULINO",
+        "senhaHash": "123456",
+        "renda": 5000,
+        "rendaVariavel": false,
+        "perfilInvestidor": "MODERADO",
+        "dataCriacao": null,
+        "diaFechamento": 5,
+        "hibernateLazyInitializer": {}
+      },
+      "meta": "Reserva de Emergência",
+      "valorAlvo": 15000,
+      "valorAtual": 3000,
+      "aporteMensal": 1500,
+      "dataAlvo": "2028-10-24",
+      "prioridade": 1,
+      "taxaRendimentoAnual": 12,
+      "reservaEmergencia": true,
+      "criadoEm": null,
+      "hibernateLazyInitializer": {}
+    },
+    "diasAtraso": 3,
+    "valorFuturoPerdido": 190.46,
+    "dataCalculo": "2026-10-24T16:03:09.568441444"
+  }
+]
+```
+
+#### 📊 Memória de Cálculo Validada pelo Motor:
+1. **Aporte Diário da Meta:** $\text{R\$ } 1.500{,}00 \div 30\text{ dias} = \text{R\$ } 50{,}00/\text{dia}$
+2. **Impacto em Dias de Atraso (`diasAtraso`):** $\text{R\$ } 150{,}00 \div \text{R\$ } 50{,}00 = \mathbf{3\text{ dias}}$
+3. **Impacto em Juros Compostos (`valorFuturoPerdido`):**
+   $$FV = 150{,}00 \times (1 + 0{,}01)^{24\text{ meses}} = \mathbf{\text{R\$ } 190{,}46}$$
+   *(O gasto de R$ 150,00 hoje representa R$ 190,46 a menos na Reserva de Emergência na data alvo de 24/10/2028).*
