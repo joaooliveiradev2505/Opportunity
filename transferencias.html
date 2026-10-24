@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferências - Fintech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200">
+            <span class="text-2xl font-bold text-indigo-600"><i class="fas fa-wallet mr-2"></i>FinTech</span>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="dashboard.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition">
+                <i class="fas fa-home w-6"></i> Início
+            </a>
+            <a href="transferencias.html" class="flex items-center px-4 py-3 bg-indigo-50 text-indigo-600 rounded-lg font-semibold">
+                <i class="fas fa-exchange-alt w-6"></i> Transferências
+            </a>
+            <a href="cartoes.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition">
+                <i class="fas fa-credit-card w-6"></i> Cartões
+            </a>
+            <a href="extrato.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition">
+                <i class="fas fa-chart-bar w-6"></i> Extrato
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Transferências e Pix</h1>
+            <p class="text-gray-500 mt-1">Envie dinheiro de forma rápida e segura.</p>
+        </header>
+
+        <div class="grid grid-cols-3 gap-6">
+            <!-- Formulário de Transferência (Gestalt: Proximidade e Continuidade) -->
+            <div class="col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Nova Transferência</h2>
+                
+                <form class="space-y-6">
+                    <!-- Proximidade: Label colada ao input correspondente -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Para quem você quer enviar? (Chave Pix)</label>
+                        <input type="text" placeholder="CPF, E-mail, Celular ou CNPJ" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Qual o valor?</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500 font-bold">R$</span>
+                            <input type="number" placeholder="0,00" class="w-full pl-12 pr-4 py-3 text-lg font-bold rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Saldo disponível: R$ 14.520,00</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mensagem (opcional)</label>
+                        <textarea placeholder="Escreva uma mensagem..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none transition" rows="2"></textarea>
+                    </div>
+
+                    <!-- Hierarquia: Botão principal em destaque -->
+                    <button type="button" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-lg hover:bg-indigo-700 transition shadow-md">
+                        Continuar para Revisão
+                    </button>
+                </form>
+            </div>
+
+            <!-- Contatos Frequentes (Gestalt: Semelhança) -->
+            <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-6">Contatos Frequentes</h2>
+                <div class="space-y-4">
+                    <!-- Semelhança: Itens de contato repetem o mesmo padrão visual -->
+                    <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-transparent hover:border-gray-200">
+                        <img src="https://ui-avatars.com/api/?name=Maria+Silva&background=random" class="w-12 h-12 rounded-full">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">Maria Silva</p>
+                            <p class="text-xs text-gray-500">Pix: ***.456.789-**</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-transparent hover:border-gray-200">
+                        <img src="https://ui-avatars.com/api/?name=Carlos+Eduardo&background=random" class="w-12 h-12 rounded-full">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">Carlos Eduardo</p>
+                            <p class="text-xs text-gray-500">Pix: carlos@email.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-transparent hover:border-gray-200">
+                        <img src="https://ui-avatars.com/api/?name=Ana+Luiza&background=random" class="w-12 h-12 rounded-full">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">Ana Luiza</p>
+                            <p class="text-xs text-gray-500">Pix: (11) 98765-4321</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
