@@ -10,5 +10,6 @@ public interface LogOportunidadeRepository extends JpaRepository<LogOportunidade
     List<LogOportunidade> findByMetaImpactadaId(String metaId);
 
     List<LogOportunidade> findByTransacaoUsuarioId(String usuarioId);
-    
+
+    List<LogOportunidade> findByTransacaoId(String transacaoId);
 }

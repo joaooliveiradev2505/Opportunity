@@ -9,6 +9,8 @@ public interface MetaRepository extends JpaRepository<Meta, String> {
 
     List<Meta> findByUsuarioId(String usuarioId);
 
+    List<Meta> findByUsuarioIdOrderByPrioridadeAsc(String usuarioId);
+
     boolean existsByUsuarioId(String usuarioId);
     
     
