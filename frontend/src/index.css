@@ -1,0 +1,577 @@
+:root {
+  /* Paleta "Vintage Financial Ledger" - Papel Jornal Antigo / Off-White Quente (Zero #FFF puro) */
+  --bg-newsprint: #EDE5D5;       /* Fundo principal: papel jornal envelhecido suave aos olhos */
+  --bg-card: #F4EFE4;            /* Fundo dos blocos: papel pólen / marfim quente */
+  --bg-card-alt: #E6DEC8;        /* Papel secundário mais encorpado */
+  --bg-receipt: #EFE7D6;         /* Fundo dos recibos verticais (fiel ao Conceito 3) */
+  --bg-muted: #E2D9C5;           /* Cabeçalhos de tabelas e divisórias editoriais */
+
+  /* Tintas de Impressão (Zero #000 puro) */
+  --ink-primary: #1C1A17;        /* Preto nanquim / carvão impresso */
+  --ink-secondary: #4E4940;      /* Cinza grafite editorial */
+  --ink-faint: #7E776B;          /* Metadados e linhas tracejadas */
+
+  /* Cores fieis ao Conceito 3 (Verde Folha Seca & Terracota Tijolo) */
+  --green-dollar: #326E4E;       /* Verde da barra superior do recibo da frente e 'Livre para Gastar' */
+  --green-soft: #DCECE3;
+  --red-stamp: #C84B31;          /* Vermelho terracota da barra superior dos recibos de trás */
+  --red-soft: #F5DBD8;
+  --amber-gold: #9A5B13;
+  --amber-soft: #F3E5CE;
+
+  /* Aliases semânticos */
+  --accent-terracotta: #C84B31;
+  --accent-amber: #9A5B13;
+  --accent-sage: #326E4E;
+  --border-ledger-strong: #1C1A17;
+
+  /* Tipografia */
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Bordas e Sombras Editoriais (Fiel ao Conceito 3) */
+  --border-ink: 2px solid #1C1A17;
+  --border-double: 4px double #1C1A17;
+  --shadow-editorial: 5px 5px 0px #1C1A17;
+  --shadow-editorial-sm: 3px 3px 0px #1C1A17;
+}
+
+body {
+  background-color: var(--bg-newsprint);
+  background-image: radial-gradient(rgba(28, 26, 23, 0.04) 1px, transparent 0);
+  background-size: 18px 18px;
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.font-editorial {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-card {
+  background-color: var(--bg-card);
+  border: var(--border-ink);
+  box-shadow: var(--shadow-editorial);
+  border-radius: 0px;
+}
+
+.ledger-card-flat {
+  background-color: var(--bg-card);
+  border: var(--border-ink);
+  border-radius: 0px;
+}
+
+/* ==========================================================================
+   EQUAÇÃO DO ORÇAMENTO REVERSO (TOPO IDÊNTICO AO CONCEITO 3)
+   ========================================================================== */
+.concept3-title-banner {
+  background-color: var(--bg-card);
+  border: 2px solid var(--ink-primary);
+  text-align: center;
+  padding: 0.55rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.concept3-eq-box {
+  background-color: var(--bg-card);
+  border: 2px solid var(--ink-primary);
+  box-shadow: 5px 5px 0px var(--ink-primary);
+  position: relative;
+  text-align: center;
+  overflow: hidden;
+}
+
+.concept3-eq-strip-green {
+  height: 7px;
+  background-color: var(--green-dollar);
+  border-bottom: 1.5px solid var(--ink-primary);
+}
+
+.concept3-eq-strip-green-bottom {
+  height: 7px;
+  background-color: var(--green-dollar);
+  border-top: 1.5px solid var(--ink-primary);
+}
+
+.concept3-eq-strip-red {
+  height: 7px;
+  background-color: var(--red-stamp);
+  border-bottom: 1.5px solid var(--ink-primary);
+}
+
+.concept3-eq-strip-red-bottom {
+  height: 7px;
+  background-color: var(--red-stamp);
+  border-top: 1.5px solid var(--ink-primary);
+}
+
+.concept3-eq-header-solid-green {
+  background-color: var(--green-dollar);
+  color: #F4EFE4;
+  border-bottom: 2px solid var(--ink-primary);
+  padding: 0.45rem 0.5rem;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.concept3-eq-operator {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ink-primary);
+  line-height: 1;
+  user-select: none;
+}
+
+/* ==========================================================================
+   RECIBOS VERTICAIS SOBREPOSTOS ESTILO CARD GAME (FIEL AO CONCEITO 3)
+   ========================================================================== */
+.concept3-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  height: 365px;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem;
+  overflow: visible;
+  perspective: 1000px;
+}
+
+/* Zona central sutil quando o usuário está segurando/arrastando uma carta */
+.concept3-stage.is-dragging-active::before {
+  content: 'SOLTE NO CENTRO PARA PRIORIDADE #1';
+  position: absolute;
+  top: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.65rem;
+  background-color: var(--green-soft);
+  color: var(--green-dollar);
+  border: 1.5px dashed var(--green-dollar);
+  z-index: 90;
+  pointer-events: none;
+  animation: pulseDropZone 1s infinite alternate ease-in-out;
+}
+
+@keyframes pulseDropZone {
+  from { opacity: 0.75; transform: translateX(-50%) scale(0.98); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.02); }
+}
+
+/* Animação de arco ("Swoop") quando um recibo passa de trás para a frente da pilha */
+@keyframes cardSwoopToFront {
+  0% {
+    transform: translate3d(var(--card-from-x, -70px), -20px, 0) rotate(var(--card-from-rot, -6deg)) scale(0.95);
+  }
+  45% {
+    transform: translate3d(0px, -16px, 0) rotate(1.5deg) scale(1.07);
+    filter: drop-shadow(14px 18px 0px rgba(28, 26, 23, 0.85));
+  }
+  100% {
+    transform: translate3d(var(--card-rest-x, 0px), var(--card-rest-y, 10px), 0) rotate(var(--card-rest-rot, 0deg)) scale(1.03);
+  }
+}
+
+/* Wrapper externo do recibo com ALTURA E LARGURA PADRÃO FIXAS (226x300px)
+   para que todas as cartas tenham exatamente o mesmo tamanho e nunca invadam o título abaixo! */
+.concept3-vertical-receipt {
+  width: 226px;
+  height: 300px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  filter: drop-shadow(5px 6px 0px var(--ink-primary));
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -113px;
+  margin-top: -156px;
+  transition:
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.3s ease,
+    opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  touch-action: none;
+  cursor: grab;
+  will-change: transform;
+}
+
+.concept3-vertical-receipt:active {
+  cursor: grabbing;
+}
+
+/* Enquanto o usuário arrasta a carta com o mouse pressionado:
+   desliga a transição de transform para seguir o ponteiro em 0ms (como em um jogo de cartas!) */
+.concept3-vertical-receipt.is-dragging {
+  transition: filter 0.15s ease !important;
+  z-index: 85 !important;
+  cursor: grabbing !important;
+  filter: drop-shadow(14px 18px 0px rgba(28, 26, 23, 0.82)) !important;
+}
+
+/* Quando o recibo acaba de ser promovido para a frente, executa o arco de sobreposição */
+.concept3-vertical-receipt.is-promoting {
+  animation: cardSwoopToFront 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Corpo retangular superior do papel: altura travada em 286px (+ 14px do SVG = 300px exatos) */
+.concept3-receipt-paper {
+  position: relative;
+  height: 286px;
+  background-color: var(--bg-receipt);
+  background-image:
+    radial-gradient(at 20% 30%, rgba(255, 252, 242, 0.45) 0px, transparent 60%),
+    radial-gradient(at 80% 75%, rgba(160, 145, 120, 0.14) 0px, transparent 55%);
+  border-top: 2px solid var(--ink-primary);
+  border-left: 2px solid var(--ink-primary);
+  border-right: 2px solid var(--ink-primary);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+}
+
+.concept3-vertical-receipt.is-front .concept3-receipt-paper {
+  background-color: #F6F0E2;
+}
+
+/* Papel que está NA FRENTE (Prioridade #1) - Sobrepondo claramente os de trás */
+.concept3-vertical-receipt.is-front {
+  z-index: 30;
+  filter: drop-shadow(8px 10px 0px var(--ink-primary));
+}
+
+/* Quando o usuário está puxando uma carta de trás, a carta da frente recua de leve para dar passagem */
+.concept3-vertical-receipt.is-front.is-yielding {
+  filter: drop-shadow(4px 5px 0px var(--ink-primary));
+  opacity: 0.92;
+}
+
+/* Papéis que estão ATRÁS (Esquerda e Direita, cobertos em ~50% pelo papel da frente) */
+.concept3-vertical-receipt.is-back-left {
+  z-index: 15;
+}
+
+.concept3-vertical-receipt.is-back-right {
+  z-index: 14;
+}
+
+.concept3-vertical-receipt.is-back-extra {
+  z-index: 10;
+}
+
+/* Hover sutil nos papéis de trás (só quando ninguém está sendo arrastado) */
+.concept3-stage:not(.is-dragging-active) .concept3-vertical-receipt.is-back-left:hover {
+  filter: drop-shadow(7px 9px 0px var(--ink-primary));
+}
+
+.concept3-stage:not(.is-dragging-active) .concept3-vertical-receipt.is-back-right:hover {
+  filter: drop-shadow(7px 9px 0px var(--ink-primary));
+}
+
+/* Barra superior colorida do recibo (Verde p/ Frente, Terracota p/ Trás) */
+.concept3-receipt-topbar-green {
+  height: 14px;
+  min-height: 14px;
+  background-color: var(--green-dollar);
+  border-bottom: 2px solid var(--ink-primary);
+  width: 100%;
+}
+
+.concept3-receipt-topbar-red {
+  height: 14px;
+  min-height: 14px;
+  background-color: var(--red-stamp);
+  border-bottom: 2px solid var(--ink-primary);
+  width: 100%;
+}
+
+.concept3-receipt-body {
+  padding: 0.55rem 0.85rem 0.45rem 0.85rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Título com altura padronizada (1 ou 2 linhas ocupam exatamente o mesmo espaço!) */
+.concept3-receipt-title {
+  height: 2.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  font-size: 1.08rem;
+  line-height: 1.12;
+  margin-bottom: 0;
+}
+
+.concept3-receipt-divider {
+  border-bottom: 1.5px dashed var(--ink-faint);
+  margin: 0.32rem 0;
+}
+
+/* Dentes serrilhados na base do recibo encaixados perfeitamente com a borda 2px */
+.concept3-sawtooth-footer {
+  width: 100%;
+  height: 14px;
+  display: block;
+  margin-top: -1px;
+  line-height: 0;
+  overflow: visible;
+}
+
+/* Barras de progresso estilo Conceito 3 (Borda preta grossa + preenchimento sólido) */
+.concept3-progress-track {
+  height: 16px;
+  background-color: var(--bg-card);
+  border: 2px solid var(--ink-primary);
+  display: flex;
+  overflow: hidden;
+}
+
+.concept3-progress-fill-red {
+  background-color: var(--red-stamp);
+  border-right: 2px solid var(--ink-primary);
+  height: 100%;
+}
+
+.concept3-progress-fill-green {
+  background-color: var(--green-dollar);
+  border-right: 2px solid var(--ink-primary);
+  height: 100%;
+}
+
+.concept3-progress-fill-black {
+  background-color: var(--ink-primary);
+  height: 100%;
+}
+
+/* Carimbos de Auditoria (Stamps) */
+.stamp-badge-danger {
+  background-color: var(--red-soft);
+  color: var(--red-stamp);
+  border: 1.5px solid var(--red-stamp);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.18rem 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.stamp-badge-success {
+  background-color: var(--green-soft);
+  color: var(--green-dollar);
+  border: 1.5px solid var(--green-dollar);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.18rem 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.stamp-badge-amber {
+  background-color: var(--amber-soft);
+  color: var(--amber-gold);
+  border: 1.5px solid var(--amber-gold);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.18rem 0.5rem;
+}
+
+/* Botões e Inputs no Estilo Editorial */
+.btn-ink {
+  background-color: var(--ink-primary);
+  color: var(--bg-card);
+  border: 1.5px solid var(--ink-primary);
+  box-shadow: var(--shadow-editorial-sm);
+  border-radius: 0px;
+  font-weight: 600;
+  transition: all 0.12s ease;
+}
+
+.btn-ink:hover, .btn-ink:focus {
+  background-color: var(--green-dollar);
+  border-color: var(--ink-primary);
+  color: var(--bg-card);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--ink-primary);
+}
+
+.btn-outline-ink {
+  background-color: transparent;
+  color: var(--ink-primary);
+  border: 1.5px solid var(--ink-primary);
+  border-radius: 0px;
+  font-weight: 600;
+}
+
+.btn-outline-ink:hover, .btn-outline-ink.active {
+  background-color: var(--ink-primary);
+  color: var(--bg-card);
+}
+
+.input-ledger {
+  background-color: #FAF6EC !important;
+  border: 1.5px solid var(--ink-primary) !important;
+  border-radius: 0px !important;
+  color: var(--ink-primary) !important;
+  font-family: var(--font-sans);
+}
+
+.input-ledger:focus {
+  box-shadow: 3px 3px 0px var(--ink-primary) !important;
+  border-color: var(--ink-primary) !important;
+}
+
+.divider-double {
+  border-bottom: var(--border-double);
+}
+
+.divider-dashed {
+  border-bottom: 1.5px dashed var(--ink-secondary);
+}
+
+/* Botão "+" em todos os recibos para abrir a Telinha de Visão dos Recibos */
+.concept3-receipt-plus-btn {
+  position: absolute;
+  top: 18px;
+  right: 7px;
+  z-index: 25;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ink-primary);
+  color: var(--bg-card);
+  border: 1.5px solid var(--ink-primary);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.concept3-receipt-plus-btn:hover {
+  background-color: var(--green-dollar);
+  transform: scale(1.12);
+}
+
+/* Botão rápido de exclusão em recibo de custo de oportunidade */
+.concept3-receipt-del-btn {
+  position: absolute;
+  top: 18px;
+  left: 7px;
+  z-index: 25;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--red-soft);
+  color: var(--red-stamp);
+  border: 1.5px solid var(--red-stamp);
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.concept3-receipt-del-btn:hover {
+  background-color: var(--red-stamp);
+  color: #fff;
+  transform: scale(1.12);
+}
+
+/* Telinha (Modal Editorial) de Visão dos Recibos Criados */
+.concept3-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(28, 26, 23, 0.62);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeInModal 0.18s ease-out;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.concept3-modal-sheet {
+  width: 100%;
+  max-width: 920px;
+  max-height: 88vh;
+  background-color: var(--bg-paper);
+  background-image:
+    radial-gradient(at 15% 15%, rgba(255, 250, 240, 0.55) 0px, transparent 50%),
+    radial-gradient(at 85% 85%, rgba(180, 165, 140, 0.25) 0px, transparent 50%);
+  border: 2.5px solid var(--ink-primary);
+  box-shadow: 10px 12px 0px var(--ink-primary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.concept3-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+/* Recibo em modo Grade dentro da Telinha de Visão */
+.concept3-grid-receipt {
+  width: 100%;
+  min-height: 300px;
+  height: auto;
+  filter: drop-shadow(5px 6px 0px var(--ink-primary));
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease;
+}
+
+.concept3-grid-receipt:hover {
+  transform: translateY(-4px);
+}
+
+.concept3-grid-receipt.is-selected-highlight {
+  filter: drop-shadow(7px 8px 0px var(--green-dollar));
+  transform: translateY(-4px) scale(1.02);
+}
+
+@media (max-width: 767px) {
+  .concept3-stage {
+    height: 350px;
+  }
+}

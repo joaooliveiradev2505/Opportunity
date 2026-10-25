@@ -1,12 +1,16 @@
 package com.example.FintechFiap.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -39,6 +43,23 @@ public class MetaController {
     @GetMapping("/{id}")
     public Meta buscarPorId(@PathVariable String id) {
         return metaService.buscarPorId(id);
+    }
+
+    @PutMapping("/{id}/priorizar")
+    public List<Meta> priorizar(@PathVariable String id) {
+        return metaService.priorizarMeta(id);
+    }
+
+    @PutMapping("/{id}/aporte")
+    public Meta adicionarAporte(@PathVariable String id, @RequestBody Map<String, BigDecimal> body) {
+        BigDecimal valor = body.getOrDefault("valor", BigDecimal.ZERO);
+        return metaService.adicionarAporte(id, valor);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void excluir(@PathVariable String id) {
+        metaService.excluirMeta(id);
     }
 
 }

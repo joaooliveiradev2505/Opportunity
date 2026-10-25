@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.FintechFiap.model.LogOportunidade;
 import com.example.FintechFiap.model.Meta;
@@ -47,8 +48,32 @@ public class TransacaoService {
         return logOportunidadeRepository.findByTransacaoUsuarioId(usuarioId);
     }
 
+    @Transactional
+    public void excluirLogOportunidade(String logId) {
+        LogOportunidade log = logOportunidadeRepository.findById(logId)
+            .orElseThrow(() -> new IllegalArgumentException("Recibo de custo de oportunidade não encontrado!"));
+        String transacaoId = log.getTransacao() != null ? log.getTransacao().getId() : null;
+        logOportunidadeRepository.delete(log);
+        logOportunidadeRepository.flush();
+        if (transacaoId != null && transacaoRepository.existsById(transacaoId)) {
+            transacaoRepository.deleteById(transacaoId);
+        }
+    }
+
+    @Transactional
+    public void excluirTransacao(String transacaoId) {
+        List<LogOportunidade> logs = logOportunidadeRepository.findByTransacaoId(transacaoId);
+        if (!logs.isEmpty()) {
+            logOportunidadeRepository.deleteAll(logs);
+            logOportunidadeRepository.flush();
+        }
+        if (transacaoRepository.existsById(transacaoId)) {
+            transacaoRepository.deleteById(transacaoId);
+        }
+    }
+
     private void gerarLogCustoOportunidade(String usuarioId, Transacao gasto) {
-        List<Meta> metas = metaRepository.findByUsuarioId(usuarioId);
+        List<Meta> metas = metaRepository.findByUsuarioIdOrderByPrioridadeAsc(usuarioId);
         if (metas.isEmpty()) {
             return;
         }

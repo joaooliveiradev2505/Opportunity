@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +41,18 @@ public class TransacaoController {
     @GetMapping("/usuario/{usuarioId}/custos-oportunidade")
     public List<LogOportunidade> listarLogsPorUsuario(@PathVariable String usuarioId) {
         return transacaoService.listarLogsPorUsuario(usuarioId);
+    }
+
+    @DeleteMapping("/custos-oportunidade/{logId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void excluirLogOportunidade(@PathVariable String logId) {
+        transacaoService.excluirLogOportunidade(logId);
+    }
+
+    @DeleteMapping("/{transacaoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void excluirTransacao(@PathVariable String transacaoId) {
+        transacaoService.excluirTransacao(transacaoId);
     }
 
 }
