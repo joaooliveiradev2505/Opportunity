@@ -241,47 +241,74 @@ CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
 
 ---
 
-## 7. Como Executar a API Backend (Java 21 + Spring Boot + Oracle)
+## 7. Como Executar o Projeto Full-Stack (Backend Java + Frontend React + Python IA)
 
 ### 7.1 Pré-requisitos e Configuração de Variáveis (`.env`)
-1. **Java JDK 21** instalado (`java -version` e `javac -version`).
+1. **Java JDK 21** instalado (`java -version` e `javac -version`) e **Node.js 20+** para o frontend.
 2. Na raiz do projeto (`FintechFiap/`), crie um arquivo `.env` (ignorado pelo Git) com suas credenciais do banco Oracle da FIAP:
    ```properties
    DB_USERNAME=rmXXXXXX
    DB_PASSWORD=sua_senha_fiap
    ```
-3. Inicie o servidor Spring Boot utilizando o Maven Wrapper:
+   *(O script DDL completo das tabelas `TB_FIN_*` encontra-se na raiz do repositório em `schema-oracle.sql`).*
+3. **Executar o Backend (Spring Boot + Oracle na porta `8080`):**
    ```bash
    ./mvnw spring-boot:run
    ```
-4. Acesse a documentação interativa **Swagger UI** no navegador:
-   👉 **`http://localhost:8080/swagger-ui.html`**
+   * **Interface Unificada (Build de Produção):** `http://localhost:8080`
+   * **Documentação Interativa Swagger UI:** `http://localhost:8080/swagger-ui.html`
+4. **Executar o Frontend em Modo Desenvolvimento (Vite + React 19 + Bootstrap 5 na porta `5173`):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+5. **Executar o Módulo Python de Custo de Oportunidade & Consultor IA (`RNF-03` / Fase 1):**
+   ```bash
+   python3 python/motor_oportunidade_ia.py
+   # Ou para exportar o diagnóstico completo em JSON:
+   python3 python/motor_oportunidade_ia.py --json
+   ```
+6. **Executar a Bateria de Testes Unitários Automatizados (JUnit 5 + Mockito — Fase 7):**
+   ```bash
+   ./mvnw test
+   ```
 
 ---
 
-### 7.2 Mapa de Endpoints da API REST
+### 7.2 Mapa Completo de Endpoints da API REST
 
 | Recurso | Método HTTP | Rota (`Endpoint`) | Descrição |
 | :--- | :---: | :--- | :--- |
-| **Usuários** | `POST` | `/api/usuarios` | Cadastra um novo usuário no Oracle (`201 Created`) |
-| **Usuários** | `GET` | `/api/usuarios/{id}` | Busca os dados de um usuário pelo UUID |
+| **Autenticação** | `POST` | `/api/auth/login` | Autentica usuário (BCrypt) e emite token stateless Bearer (`200 OK`) |
+| **Usuários** | `POST` | `/api/usuarios` | Cadastra novo usuário com senha criptografada em BCrypt (`201 Created`) |
+| **Usuários** | `GET` | `/api/usuarios/{id}` | Busca os dados do usuário pelo UUID (ocultando `senhaHash`) |
+| **Usuários** | `PUT` | `/api/usuarios/{id}` | Atualiza perfil de investidor, renda mensal e dia de fechamento |
 | **Metas** | `POST` | `/api/metas/usuario/{usuarioId}` | Cria um objetivo financeiro / Reserva de Emergência |
 | **Metas** | `GET` | `/api/metas/usuario/{usuarioId}` | Lista todas as metas de um usuário (ordenadas por prioridade) |
 | **Metas** | `GET` | `/api/metas/{id}` | Busca uma meta específica pelo UUID |
+| **Metas** | `PUT` | `/api/metas/{id}` | Edita nome, valor alvo, aporte planejado ou taxa de uma meta |
 | **Metas** | `PUT` | `/api/metas/{id}/priorizar` | Promove a meta escolhida para a Prioridade #1 e reordena as demais |
 | **Metas** | `PUT` | `/api/metas/{id}/aporte` | Soma um novo aporte (`valor`) ao saldo acumulado da meta |
 | **Metas** | `DELETE` | `/api/metas/{id}` | Exclui o recibo de meta no Oracle (`204 No Content`) |
-| **Transações** | `POST` | `/api/transacoes/usuario/{usuarioId}` | Registra transação e **aciona o Motor de Custo de Oportunidade** se for `GASTO_LIVRE` |
+| **Transações** | `POST` | `/api/transacoes/usuario/{usuarioId}` | Registra transação, aciona o **Motor de Custo de Oportunidade** (`GASTO_LIVRE`) ou soma na Meta #1 (`APORTE_META`) |
 | **Transações** | `GET` | `/api/transacoes/usuario/{usuarioId}` | Lista o extrato completo de transações do usuário |
-| **Transações** | `DELETE` | `/api/transacoes/{transacaoId}` | Exclui uma transação e eventuais logs vinculados (`204 No Content`) |
+| **Transações** | `PUT` | `/api/transacoes/{transacaoId}` | Atualiza descrição, valor, categoria, tipo ou data da transação |
+| **Transações** | `DELETE` | `/api/transacoes/{transacaoId}` | Exclui transação, limpa logs vinculados e estorna `APORTE_META` (`204 No Content`) |
 | **Custo de Oportunidade** | `GET` | `/api/transacoes/usuario/{usuarioId}/custos-oportunidade` | Lista os recibos calculados (Dias de Atraso + Valor Futuro Perdido em Juros Compostos) |
-| **Custo de Oportunidade** | `DELETE` | `/api/transacoes/custos-oportunidade/{logId}` | Exclui o recibo de custo de oportunidade e estorna o lançamento errado (`204 No Content`) |
+| **Custo de Oportunidade** | `DELETE` | `/api/transacoes/custos-oportunidade/{logId}` | Exclui o recibo de custo de oportunidade e estorna o lançamento (`204 No Content`) |
 | **Dívidas** | `POST` | `/api/dividas/usuario/{usuarioId}` | Registra uma dívida ou parcelamento do usuário |
 | **Dívidas** | `GET` | `/api/dividas/usuario/{usuarioId}` | Lista todas as dívidas do usuário |
 | **Dívidas** | `GET` | `/api/dividas/{id}` | Busca uma dívida específica pelo UUID |
+| **Dívidas** | `PUT` | `/api/dividas/{id}` | Atualiza dados cadastrais da dívida |
+| **Dívidas** | `PUT` | `/api/dividas/{id}/pagar-parcela` | Incrementa parcela paga e quita automaticamente na última parcela (`QUITADA`) |
+| **Dívidas** | `DELETE` | `/api/dividas/{id}` | Exclui um registro de dívida (`204 No Content`) |
 | **Investimentos** | `POST` | `/api/investimentos/usuario/{usuarioId}` | Cadastra um ativo de Renda Fixa ou Renda Variável na carteira |
 | **Investimentos** | `GET` | `/api/investimentos/usuario/{usuarioId}` | Lista a carteira de investimentos do usuário |
 | **Investimentos** | `GET` | `/api/investimentos/{id}` | Busca um investimento específico pelo UUID |
+| **Investimentos** | `PUT` | `/api/investimentos/{id}` | Atualiza dados cadastrais do ativo financeiro |
+| **Investimentos** | `PUT` | `/api/investimentos/{id}/saldo` | Atualiza o saldo atual de mercado (`saldoAtual`) do ativo |
+| **Investimentos** | `DELETE` | `/api/investimentos/{id}` | Remove um ativo da carteira de investimentos (`204 No Content`) |
 
 ---
 
@@ -307,7 +334,7 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
   "diaFechamento": 5
 }
 ```
-* **Resultado:** `201 Created` — Usuário persistido na `TB_FIN_USUARIO` com UUID gerado (`da354833-b0ea-425a-b2aa-c9127c31d002`).
+* **Resultado:** `201 Created` — Usuário persistido na `TB_FIN_USUARIO` com UUID gerado (`da354833-b0ea-425a-b2aa-c9127c31d002`) e senha criptografada com **BCrypt** (`$2a$10$...`), oculta no JSON de retorno via `@JsonProperty(access = WRITE_ONLY)`.
 
 ---
 
@@ -367,20 +394,17 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
         "email": "joao@opportunity.com.br",
         "dataNascimento": "2002-05-25",
         "sexo": "MASCULINO",
-        "senhaHash": "123456",
-        "renda": 5000,
+        "renda": 5000.00,
         "rendaVariavel": false,
         "perfilInvestidor": "MODERADO",
-        "dataCriacao": null,
-        "diaFechamento": 5,
-        "hibernateLazyInitializer": {}
+        "dataCriacao": "2026-10-24T15:58:12",
+        "diaFechamento": 5
       },
       "descricao": "Costelinha na brasa de sábado",
-      "valorTransacao": 150,
+      "valorTransacao": 150.00,
       "tipoTransacao": "GASTO_LIVRE",
       "categoria": "LAZER",
-      "dataTransacao": "2026-10-24",
-      "hibernateLazyInitializer": {}
+      "dataTransacao": "2026-10-24"
     },
     "metaImpactada": {
       "id": "e811dc30-fa6a-4224-9759-7f8d8755db38",
@@ -390,24 +414,21 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
         "email": "joao@opportunity.com.br",
         "dataNascimento": "2002-05-25",
         "sexo": "MASCULINO",
-        "senhaHash": "123456",
-        "renda": 5000,
+        "renda": 5000.00,
         "rendaVariavel": false,
         "perfilInvestidor": "MODERADO",
-        "dataCriacao": null,
-        "diaFechamento": 5,
-        "hibernateLazyInitializer": {}
+        "dataCriacao": "2026-10-24T15:58:12",
+        "diaFechamento": 5
       },
       "meta": "Reserva de Emergência",
-      "valorAlvo": 15000,
-      "valorAtual": 3000,
-      "aporteMensal": 1500,
+      "valorAlvo": 15000.00,
+      "valorAtual": 3000.00,
+      "aporteMensal": 1500.00,
       "dataAlvo": "2028-10-24",
       "prioridade": 1,
-      "taxaRendimentoAnual": 12,
+      "taxaRendimentoAnual": 12.00,
       "reservaEmergencia": true,
-      "criadoEm": null,
-      "hibernateLazyInitializer": {}
+      "criadoEm": "2026-10-24T16:00:05"
     },
     "diasAtraso": 3,
     "valorFuturoPerdido": 190.46,
@@ -425,18 +446,18 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
 
 ---
 
-## 9. Planejamento das Próximas Etapas (Roadmap de Fechamento)
+## 9. Status do Roadmap de Desenvolvimento (100% Concluído)
 
-1. **Etapa 1 — Fechamento do CRUD Completo das Abas & Refinamento da API:**
-   * Integração automática do lançamento `APORTE_META` somando no saldo da Meta Principal.
-   * Ações de **Pagar Parcela** (`PUT /api/dividas/{id}/pagar-parcela`) e **Excluir Dívida** (`DELETE /api/dividas/{id}`) + alerta de impacto de juros na Aba 3.
-   * Ações de **Atualizar Saldo** e **Excluir Ativo** (`PUT` e `DELETE /api/investimentos/{id}`) na Aba 2.
-   * Botão de exclusão direta de lançamentos na tabela do **Livro-Caixa** (Aba 4) conectado a `DELETE /api/transacoes/{transacaoId}`.
-   * Limpeza de serialização Hibernate (`@JsonIgnoreProperties`) e tratamento global de erros (`@RestControllerAdvice`).
-2. **Etapa 2 — Segurança & Autenticação (RF-01 / RNF-06):**
-   * Ocultação do `senhaHash` nas respostas JSON (`WRITE_ONLY`), criptografia de senhas com **BCrypt** e autenticação via **JWT** (`POST /api/auth/login`) integrada à tela de Login/Cadastro no Frontend.
-3. **Etapa 3 — Responsividade Mobile (RNF-02):**
-   * Adaptação da pilha de recibos sobrepostos e gestos *touch drag-and-drop* para smartphones (`320px` a `768px`), além de ajustes responsivos nos modais e tabelas.
-4. **Etapa 4 — Polimento Final & Entregáveis FIAP:**
-   * Inclusão dos scripts Python de análise preditiva/IA, bateria de testes unitários JUnit 5 e limpeza dos arquivos HTML estáticos legados.
+- [x] **Etapa 1 — Fechamento do CRUD Completo das Abas & Refinamento da API:**
+  * Integração automática do lançamento `APORTE_META` somando e estornando no saldo da Meta Principal.
+  * Ações de **Pagar Parcela** (`PUT /api/dividas/{id}/pagar-parcela`), **Editar** e **Excluir Dívida** (`DELETE /api/dividas/{id}`) + alerta de assimetria de juros na Aba Dívidas.
+  * Ações de **Atualizar Saldo**, **Editar** e **Excluir Ativo** (`PUT` e `DELETE /api/investimentos/{id}`) na Aba Investimentos.
+  * Edição e exclusão direta de lançamentos no **Livro-Caixa** e nos **Recibos Térmicos** conectados ao Oracle.
+  * Limpeza de serialização Hibernate (`@JsonIgnoreProperties`) e tratamento global de erros (`@RestControllerAdvice`).
+- [x] **Etapa 2 — Segurança & Autenticação (`RF-01` / `RNF-06`):**
+  * Ocultação do `senhaHash` nas respostas JSON (`WRITE_ONLY`), criptografia de senhas com **BCrypt** e autenticação stateless via **Bearer Token** (`POST /api/auth/login`) integrada à tela editorial de Login/Cadastro (`TelaLogin.jsx`).
+- [x] **Etapa 3 — Responsividade Mobile (`RNF-02`):**
+  * Equação do Orçamento Reverso em grade 2×2 para smartphones, leque de recibos térmicos com compressão horizontal dinâmica (`fatorMobile`) sem overflow lateral e abas deslizáveis por toque.
+- [x] **Etapa 4 — Polimento Final & Entregáveis Acadêmicos da FIAP:**
+  * Módulo Python de Custo de Oportunidade, Simulador de Micro-hábitos e Consultor IA (`python/motor_oportunidade_ia.py`), bateria de testes unitários JUnit 5 + Mockito (`FintechFiapApplicationTests.java`), script DDL Oracle (`schema-oracle.sql`) e limpeza de arquivos legados.
 

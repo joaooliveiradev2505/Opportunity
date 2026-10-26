@@ -2,20 +2,13 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 // ID padrão homologado no Oracle da FIAP
 export const DEFAULT_USER_ID = 'da354833-b0ea-425a-b2aa-c9127c31d002';
-export const AUTH_TOKEN_KEY = 'opportunity_auth_token';
-export const AUTH_USER_KEY = 'opportunity_auth_user';
-
 
 async function request(endpoint, options = {}) {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
     },
+    ...options,
   });
 
   if (!response.ok) {
@@ -32,13 +25,6 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // 0. Autenticação Stateless (RF-01 / RNF-06)
-  login: (email, senha) =>
-    request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, senha }),
-    }),
-
   // 1. Usuários (TB_FIN_USUARIO)
   buscarUsuario: (id) => request(`/usuarios/${id}`),
   cadastrarUsuario: (dados) =>
