@@ -2,6 +2,7 @@
   /* Paleta "Vintage Financial Ledger" - Papel Jornal Antigo / Off-White Quente (Zero #FFF puro) */
   --bg-newsprint: #EDE5D5;       /* Fundo principal: papel jornal envelhecido suave aos olhos */
   --bg-card: #F4EFE4;            /* Fundo dos blocos: papel pólen / marfim quente */
+  --bg-paper: #F4EFE4;           /* Alias para modais e folhas de recibo */
   --bg-card-alt: #E6DEC8;        /* Papel secundário mais encorpado */
   --bg-receipt: #EFE7D6;         /* Fundo dos recibos verticais (fiel ao Conceito 3) */
   --bg-muted: #E2D9C5;           /* Cabeçalhos de tabelas e divisórias editoriais */
@@ -45,6 +46,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .font-editorial {
@@ -570,8 +572,92 @@ body {
   transform: translateY(-4px) scale(1.02);
 }
 
-@media (max-width: 767px) {
+/* ==========================================================================
+   RESPONSIVIDADE MOBILE & TABLET (RNF-02 — TELAS 320px A 768px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+  :root {
+    --shadow-editorial: 3px 3px 0px #1C1A17;
+    --shadow-editorial-sm: 2px 2px 0px #1C1A17;
+  }
+
   .concept3-stage {
-    height: 350px;
+    height: 335px;
+    overflow: hidden;
+  }
+
+  .concept3-eq-box {
+    box-shadow: 3px 3px 0px var(--ink-primary);
+  }
+
+  .concept3-modal-backdrop {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+
+  .concept3-modal-sheet {
+    max-height: 92vh;
+    box-shadow: 5px 6px 0px var(--ink-primary);
+  }
+
+  .concept3-modal-body {
+    padding: 0.85rem;
+  }
+
+  .stamp-badge-danger,
+  .stamp-badge-success,
+  .stamp-badge-amber {
+    font-size: 0.68rem;
+    padding: 0.14rem 0.4rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .concept3-stage {
+    height: 318px;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+  }
+
+  .concept3-vertical-receipt {
+    width: 198px;
+    height: 286px;
+    margin-left: -99px;
+    margin-top: -143px;
+  }
+
+  .concept3-receipt-paper {
+    height: 272px;
+  }
+
+  .concept3-receipt-body {
+    padding: 0.45rem 0.65rem 0.35rem 0.65rem;
+  }
+
+  .concept3-receipt-title {
+    font-size: 0.96rem;
+    height: 2.1rem;
+  }
+
+  /* Área de toque ampliada para dedos em smartphones */
+  .concept3-receipt-plus-btn,
+  .concept3-receipt-del-btn {
+    width: 26px;
+    height: 26px;
+    top: 16px;
+  }
+
+  /* Barra de abas rolável horizontalmente no toque sem quebrar layout */
+  .tabs-mobile-scroll {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 0.4rem !important;
+  }
+
+  .tabs-mobile-scroll > .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
