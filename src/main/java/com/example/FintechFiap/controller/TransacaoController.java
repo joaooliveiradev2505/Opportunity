@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,6 +42,11 @@ public class TransacaoController {
     @GetMapping("/usuario/{usuarioId}/custos-oportunidade")
     public List<LogOportunidade> listarLogsPorUsuario(@PathVariable String usuarioId) {
         return transacaoService.listarLogsPorUsuario(usuarioId);
+    }
+
+    @PutMapping("/{transacaoId}")
+    public Transacao atualizar(@PathVariable String transacaoId, @RequestBody Transacao transacao) {
+        return transacaoService.atualizar(transacaoId, transacao);
     }
 
     @DeleteMapping("/custos-oportunidade/{logId}")

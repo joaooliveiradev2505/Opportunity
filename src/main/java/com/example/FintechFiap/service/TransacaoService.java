@@ -29,13 +29,22 @@ public class TransacaoService {
     private final MetaRepository metaRepository;
     private final LogOportunidadeRepository logOportunidadeRepository;
 
+    @Transactional
     public Transacao criar(String usuarioId, Transacao transacao) {
         Usuario usuario = usuariosService.buscarPorId(usuarioId);
         transacao.setUsuario(usuario);
+        if (transacao.getDataTransacao() == null) {
+            transacao.setDataTransacao(LocalDate.now());
+        }
+        if (transacao.getCategoria() == null || transacao.getCategoria().isBlank()) {
+            transacao.setCategoria("GERAL");
+        }
         Transacao transacaoSalva = transacaoRepository.save(transacao);
 
         if (transacaoSalva.getTipoTransacao() == TipoTransacao.GASTO_LIVRE) {
             gerarLogCustoOportunidade(usuarioId, transacaoSalva);
+        } else if (transacaoSalva.getTipoTransacao() == TipoTransacao.APORTE_META) {
+            aplicarAporteNaMetaPrincipal(usuarioId, transacaoSalva.getValorTransacao());
         }
         return transacaoSalva;
     }
@@ -46,6 +55,18 @@ public class TransacaoService {
 
     public List<LogOportunidade> listarLogsPorUsuario(String usuarioId) {
         return logOportunidadeRepository.findByTransacaoUsuarioId(usuarioId);
+    }
+
+    @Transactional
+    public Transacao atualizar(String transacaoId, Transacao dados) {
+        Transacao transacao = transacaoRepository.findById(transacaoId)
+            .orElseThrow(() -> new IllegalArgumentException("Transação não encontrada!"));
+        if (dados.getDescricao() != null) transacao.setDescricao(dados.getDescricao());
+        if (dados.getValorTransacao() != null) transacao.setValorTransacao(dados.getValorTransacao());
+        if (dados.getTipoTransacao() != null) transacao.setTipoTransacao(dados.getTipoTransacao());
+        if (dados.getCategoria() != null) transacao.setCategoria(dados.getCategoria());
+        if (dados.getDataTransacao() != null) transacao.setDataTransacao(dados.getDataTransacao());
+        return transacaoRepository.save(transacao);
     }
 
     @Transactional
@@ -62,14 +83,42 @@ public class TransacaoService {
 
     @Transactional
     public void excluirTransacao(String transacaoId) {
+        Transacao transacao = transacaoRepository.findById(transacaoId)
+            .orElseThrow(() -> new IllegalArgumentException("Transação não encontrada!"));
+
+        if (transacao.getTipoTransacao() == TipoTransacao.APORTE_META && transacao.getUsuario() != null) {
+            estornarAporteDaMetaPrincipal(transacao.getUsuario().getId(), transacao.getValorTransacao());
+        }
+
         List<LogOportunidade> logs = logOportunidadeRepository.findByTransacaoId(transacaoId);
         if (!logs.isEmpty()) {
             logOportunidadeRepository.deleteAll(logs);
             logOportunidadeRepository.flush();
         }
-        if (transacaoRepository.existsById(transacaoId)) {
-            transacaoRepository.deleteById(transacaoId);
-        }
+        transacaoRepository.delete(transacao);
+    }
+
+    private void aplicarAporteNaMetaPrincipal(String usuarioId, BigDecimal valorAporte) {
+        if (valorAporte == null || valorAporte.compareTo(BigDecimal.ZERO) <= 0) return;
+        List<Meta> metas = metaRepository.findByUsuarioIdOrderByPrioridadeAsc(usuarioId);
+        if (metas.isEmpty()) return;
+
+        Meta metaPrincipal = metas.get(0);
+        BigDecimal atual = metaPrincipal.getValorAtual() != null ? metaPrincipal.getValorAtual() : BigDecimal.ZERO;
+        metaPrincipal.setValorAtual(atual.add(valorAporte));
+        metaRepository.save(metaPrincipal);
+    }
+
+    private void estornarAporteDaMetaPrincipal(String usuarioId, BigDecimal valorEstorno) {
+        if (valorEstorno == null || valorEstorno.compareTo(BigDecimal.ZERO) <= 0) return;
+        List<Meta> metas = metaRepository.findByUsuarioIdOrderByPrioridadeAsc(usuarioId);
+        if (metas.isEmpty()) return;
+
+        Meta metaPrincipal = metas.get(0);
+        BigDecimal atual = metaPrincipal.getValorAtual() != null ? metaPrincipal.getValorAtual() : BigDecimal.ZERO;
+        BigDecimal novoValor = atual.subtract(valorEstorno);
+        metaPrincipal.setValorAtual(novoValor.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : novoValor);
+        metaRepository.save(metaPrincipal);
     }
 
     private void gerarLogCustoOportunidade(String usuarioId, Transacao gasto) {

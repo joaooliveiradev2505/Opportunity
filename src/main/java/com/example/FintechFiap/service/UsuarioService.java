@@ -30,4 +30,16 @@ public class UsuarioService {
         return usuarioRepository.findAll();
     }
 
+    public Usuario atualizar(String id, Usuario dados) {
+        Usuario usuario = buscarPorId(id);
+        if (dados.getNome() != null) usuario.setNome(dados.getNome());
+        if (dados.getRenda() != null) usuario.setRenda(dados.getRenda());
+        if (dados.getRendaVariavel() != null) usuario.setRendaVariavel(dados.getRendaVariavel());
+        if (dados.getPerfilInvestidor() != null) usuario.setPerfilInvestidor(dados.getPerfilInvestidor());
+        if (dados.getDiaFechamento() != null) usuario.setDiaFechamento(dados.getDiaFechamento());
+        if (dados.getSexo() != null) usuario.setSexo(dados.getSexo());
+        if (dados.getDataNascimento() != null) usuario.setDataNascimento(dados.getDataNascimento());
+        return usuarioRepository.save(usuario);
+    }
+
 }

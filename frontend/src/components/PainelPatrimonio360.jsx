@@ -11,7 +11,12 @@ export default function PainelPatrimonio360({
   onAportarMeta,
   onExcluirMeta,
   onCriarInvestimento,
+  onAtualizarSaldoInvestimento,
+  onExcluirInvestimento,
   onCriarDivida,
+  onPagarParcelaDivida,
+  onExcluirDivida,
+  onExcluirTransacao,
   saldoLivreRestante,
   metaPrincipal,
 }) {
@@ -21,6 +26,12 @@ export default function PainelPatrimonio360({
   const [modalMetasAberto, setModalMetasAberto] = useState(false);
   const [metaDestacadaModalId, setMetaDestacadaModalId] = useState(null);
   const [valoresAporteRapido, setValoresAporteRapido] = useState({});
+
+  // Estado para aporte/atualização rápida de saldo na Carteira de Ativos (Aba 2)
+  const [valoresAporteAtivo, setValoresAporteAtivo] = useState({});
+
+  // Filtro de natureza na Aba 4 (Livro-Caixa)
+  const [filtroNaturezaExtrato, setFiltroNaturezaExtrato] = useState('TODOS');
 
   const abrirVisaoMetas = (metaId = null) => {
     setMetaDestacadaModalId(metaId);
@@ -870,13 +881,13 @@ export default function PainelPatrimonio360({
         {/* ABA 2: CARTEIRA DE INVESTIMENTOS RENDA FIXA E VARIÁVEL (RF-04) */}
         {abaAtiva === 'INVESTIMENTOS' && (
           <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <div>
                 <h3 className="h5 font-editorial fw-bold mb-0">
                   Carteira de Ativos (Renda Fixa & Variável)
                 </h3>
                 <small style={{ color: 'var(--ink-secondary)' }}>
-                  Tabela Oracle: <code>TB_FIN_INVESTIMENTO</code>
+                  Tabela Oracle: <code>TB_FIN_INVESTIMENTO</code> • Some novos aportes (+) ou exclua ativos lançados por engano.
                 </small>
               </div>
               <span className="stamp-badge-amber">
@@ -899,25 +910,87 @@ export default function PainelPatrimonio360({
                       <th>Risco / Liquidez</th>
                       <th>IR</th>
                       <th className="text-end">Saldo Atual</th>
+                      <th style={{ minWidth: '175px' }}>+ Aporte / Ajuste</th>
+                      <th className="text-end">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {investimentos.map((inv) => (
-                      <tr key={inv.id}>
-                        <td className="fw-bold">{inv.nomeAtivo}</td>
-                        <td>
-                          <span className={inv.modalidade === 'RENDA_FIXA' ? 'stamp-badge-success' : 'stamp-badge-amber'}>
-                            {inv.modalidade}
-                          </span>
-                        </td>
-                        <td>{inv.tipoProduto}</td>
-                        <td>{inv.risco} / {inv.liquidez}</td>
-                        <td>{inv.isentoIR ? 'Isento' : 'Tributado'}</td>
-                        <td className="text-end fw-bold" style={{ color: 'var(--green-dollar)' }}>
-                          {formatBRL(inv.saldoAtual || inv.valorInvestido)}
-                        </td>
-                      </tr>
-                    ))}
+                    {investimentos.map((inv) => {
+                      const valAporteAtivo = valoresAporteAtivo[inv.id] ?? '';
+                      return (
+                        <tr key={inv.id}>
+                          <td className="fw-bold">{inv.nomeAtivo}</td>
+                          <td>
+                            <span className={inv.modalidade === 'RENDA_FIXA' ? 'stamp-badge-success' : 'stamp-badge-amber'}>
+                              {inv.modalidade}
+                            </span>
+                          </td>
+                          <td>{inv.tipoProduto}</td>
+                          <td>{inv.risco} / {inv.liquidez}</td>
+                          <td>{inv.isentoIR ? 'Isento' : 'Tributado'}</td>
+                          <td className="text-end fw-bold" style={{ color: 'var(--green-dollar)' }}>
+                            {formatBRL(inv.saldoAtual || inv.valorInvestido)}
+                          </td>
+                          <td>
+                            {onAtualizarSaldoInvestimento && (
+                              <div className="input-group input-group-sm">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="form-control input-ledger font-mono-num py-0 px-2"
+                                  placeholder="+ R$ Aporte"
+                                  value={valAporteAtivo}
+                                  onChange={(e) =>
+                                    setValoresAporteAtivo({
+                                      ...valoresAporteAtivo,
+                                      [inv.id]: e.target.value,
+                                    })
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-ink py-0 px-2 fw-bold"
+                                  title="Somar aporte ao saldo deste ativo"
+                                  onClick={async () => {
+                                    if (!valAporteAtivo || Number(valAporteAtivo) === 0) return;
+                                    await onAtualizarSaldoInvestimento(
+                                      inv.id,
+                                      { valorAporte: Number(valAporteAtivo) },
+                                      inv.nomeAtivo
+                                    );
+                                    setValoresAporteAtivo({
+                                      ...valoresAporteAtivo,
+                                      [inv.id]: '',
+                                    });
+                                  }}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                          <td className="text-end">
+                            {onExcluirInvestimento && (
+                              <button
+                                type="button"
+                                className="btn btn-sm py-0 px-2 font-mono-num"
+                                style={{
+                                  backgroundColor: 'var(--red-soft)',
+                                  color: 'var(--red-stamp)',
+                                  border: '1px solid var(--red-stamp)',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                }}
+                                onClick={() => onExcluirInvestimento(inv.id, inv.nomeAtivo)}
+                                title="Excluir este ativo da carteira"
+                              >
+                                <i className="bi bi-trash3"></i>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -940,7 +1013,7 @@ export default function PainelPatrimonio360({
                 }}
                 className="row g-2"
               >
-                <div className="col-12 col-md-3">
+                <div className="col-12 col-md-4">
                   <input
                     type="text"
                     className="form-control form-control-sm input-ledger"
@@ -960,22 +1033,36 @@ export default function PainelPatrimonio360({
                     <option value="RENDA_VARIAVEL">Renda Variável</option>
                   </select>
                 </div>
-                <div className="col-6 col-md-2">
+                <div className="col-6 col-md-3">
                   <select
                     className="form-select form-select-sm input-ledger"
                     value={novoInvest.tipoProduto}
-                    onChange={(e) => setNovoInvest({ ...novoInvest, tipoProduto: e.target.value })}
+                    onChange={(e) => {
+                      const prod = e.target.value;
+                      const isento = prod === 'LCI_LCA' || prod === 'FII';
+                      const mod = prod === 'FII' || prod === 'ACOES' ? 'RENDA_VARIAVEL' : 'RENDA_FIXA';
+                      const riscoPadrao = prod === 'TESOURO_SELIC' ? 'BAIXO' : prod === 'ACOES' ? 'ALTO' : 'MEDIO';
+                      setNovoInvest({
+                        ...novoInvest,
+                        tipoProduto: prod,
+                        modalidade: mod,
+                        isentoIR: isento,
+                        risco: riscoPadrao,
+                      });
+                    }}
                   >
                     <option value="TESOURO_SELIC">Tesouro Selic</option>
                     <option value="CDB">CDB</option>
-                    <option value="LCI_LCA">LCI / LCA (Isento)</option>
-                    <option value="FII">FII (Imobiliário)</option>
+                    <option value="LCI_LCA">LCI / LCA (Isento IR)</option>
+                    <option value="FII">FII (Imobiliário - Isento)</option>
                     <option value="ACOES">Ações / ETF</option>
                   </select>
                 </div>
                 <div className="col-6 col-md-3">
                   <input
                     type="number"
+                    step="0.01"
+                    min="0.01"
                     className="form-control form-control-sm input-ledger font-mono-num"
                     placeholder="Valor Aplicado (R$)"
                     required
@@ -983,9 +1070,45 @@ export default function PainelPatrimonio360({
                     onChange={(e) => setNovoInvest({ ...novoInvest, valorInvestido: e.target.value })}
                   />
                 </div>
-                <div className="col-6 col-md-2">
+                <div className="col-6 col-md-3">
+                  <select
+                    className="form-select form-select-sm input-ledger"
+                    value={novoInvest.risco}
+                    onChange={(e) => setNovoInvest({ ...novoInvest, risco: e.target.value })}
+                  >
+                    <option value="BAIXO">Risco: Baixo</option>
+                    <option value="MEDIO">Risco: Médio</option>
+                    <option value="ALTO">Risco: Alto</option>
+                  </select>
+                </div>
+                <div className="col-6 col-md-3">
+                  <select
+                    className="form-select form-select-sm input-ledger"
+                    value={novoInvest.liquidez}
+                    onChange={(e) => setNovoInvest({ ...novoInvest, liquidez: e.target.value })}
+                  >
+                    <option value="ALTA">Liquidez: Diária (Alta)</option>
+                    <option value="MEDIA">Liquidez: D+2 / Média</option>
+                    <option value="NO_VENCIMENTO">Liquidez: No Vencimento</option>
+                  </select>
+                </div>
+                <div className="col-6 col-md-3 d-flex align-items-center">
+                  <div className="form-check small font-mono-num mb-0">
+                    <input
+                      id="chkIsentoIR"
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={Boolean(novoInvest.isentoIR)}
+                      onChange={(e) => setNovoInvest({ ...novoInvest, isentoIR: e.target.checked })}
+                    />
+                    <label htmlFor="chkIsentoIR" className="form-check-label">
+                      Isento de IR (LCI/LCA/FII)
+                    </label>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
                   <button type="submit" className="btn btn-sm btn-ink w-100">
-                    Registrar Ativo
+                    <i className="bi bi-plus-lg me-1"></i> Registrar Ativo
                   </button>
                 </div>
               </form>
@@ -996,13 +1119,13 @@ export default function PainelPatrimonio360({
         {/* ABA 3: CONTROLE DE DÍVIDAS E INADIMPLÊNCIA (RF-03) */}
         {abaAtiva === 'DIVIDAS' && (
           <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <div>
                 <h3 className="h5 font-editorial fw-bold mb-0">
                   Radar de Dívidas & Prevenção de Juros
                 </h3>
                 <small style={{ color: 'var(--ink-secondary)' }}>
-                  Tabela Oracle: <code>TB_FIN_DIVIDA</code>
+                  Tabela Oracle: <code>TB_FIN_DIVIDA</code> • Amortize parcelas pagas (+1) e acompanhe o custo do atraso na sua Meta #1.
                 </small>
               </div>
               <span className="stamp-badge-danger">CONTROLE DE PASSIVOS</span>
@@ -1014,27 +1137,131 @@ export default function PainelPatrimonio360({
               </p>
             ) : (
               <div className="row g-2 mb-3">
-                {dividas.map((d) => (
-                  <div key={d.id} className="col-12">
-                    <div className="p-3 ledger-card-flat d-flex flex-wrap justify-content-between align-items-center" style={{ backgroundColor: 'var(--bg-receipt)' }}>
-                      <div>
-                        <span className={d.statusDivida === 'ATRASADA' ? 'stamp-badge-danger me-2' : 'stamp-badge-amber me-2'}>
-                          {d.statusDivida}
-                        </span>
-                        <strong className="font-editorial">{d.descricaoDivida}</strong>
-                        <div className="small font-mono-num" style={{ color: 'var(--ink-secondary)' }}>
-                          Parcelas: {d.parcelasPagas}/{d.totalParcelas} • Vencimento: {formatDataBR(d.dataVencimentoMensal)}
+                {dividas.map((d) => {
+                  const pagas = Number(d.parcelasPagas || 0);
+                  const total = Math.max(1, Number(d.totalParcelas || 1));
+                  const pctPago = Math.min(100, Math.round((pagas / total) * 100));
+                  const status = d.statusDivida || 'EM_DIA';
+                  const isQuitada = status === 'QUITADA' || pagas >= total;
+
+                  // RF-03: Cálculo do impacto dos juros de atraso na Meta Principal (#1)
+                  const taxaJuros = Number(d.taxaJurosAtraso || 0);
+                  const multaJurosMensal = Number(d.valorParcela || 0) * (taxaJuros / 100);
+                  const aporteDiarioMeta = metaPrincipal?.aporteMensal
+                    ? Number(metaPrincipal.aporteMensal) / 30
+                    : 50;
+                  const diasPerdidosPorAtraso =
+                    multaJurosMensal > 0
+                      ? Math.max(1, Math.ceil(multaJurosMensal / aporteDiarioMeta))
+                      : 0;
+
+                  return (
+                    <div key={d.id} className="col-12">
+                      <div
+                        className="p-3 ledger-card-flat"
+                        style={{
+                          backgroundColor: isQuitada ? 'var(--bg-muted)' : 'var(--bg-receipt)',
+                          borderLeft: `4px solid ${
+                            isQuitada
+                              ? 'var(--green-dollar)'
+                              : status === 'ATRASADA'
+                              ? 'var(--red-stamp)'
+                              : 'var(--accent-amber)'
+                          }`,
+                        }}
+                      >
+                        <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                          <div>
+                            <span
+                              className={
+                                isQuitada
+                                  ? 'stamp-badge-success me-2'
+                                  : status === 'ATRASADA'
+                                  ? 'stamp-badge-danger me-2'
+                                  : 'stamp-badge-amber me-2'
+                              }
+                            >
+                              {isQuitada ? 'QUITADA' : status}
+                            </span>
+                            <strong className="font-editorial">{d.descricaoDivida}</strong>
+                            <div className="small font-mono-num mt-1" style={{ color: 'var(--ink-secondary)' }}>
+                              Parcelas pagas: <strong>{pagas}/{total}</strong> ({pctPago}%) • Próx. Vencimento:{' '}
+                              <strong>{formatDataBR(d.dataVencimentoMensal)}</strong>
+                              {taxaJuros > 0 && ` • Juros de atraso: ${taxaJuros}% a.m.`}
+                            </div>
+                          </div>
+                          <div className="text-end font-mono-num">
+                            <div
+                              className="fw-bold"
+                              style={{
+                                color: isQuitada ? 'var(--green-dollar)' : 'var(--red-stamp)',
+                              }}
+                            >
+                              Parcela: {formatBRL(d.valorParcela)}/mês
+                            </div>
+                            <small>Total: {formatBRL(d.valorTotal)}</small>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-end font-mono-num">
-                        <div className="fw-bold" style={{ color: 'var(--red-stamp)' }}>
-                          Parcela: {formatBRL(d.valorParcela)}/mês
+
+                        {/* Barra de progresso das parcelas + Alerta RF-03 + Botões de Ação CRUD */}
+                        <div className="mt-2 pt-2 divider-dashed d-flex flex-wrap justify-content-between align-items-center gap-2">
+                          <div className="flex-grow-1" style={{ minWidth: '180px' }}>
+                            <div className="concept3-progress-track mb-1" style={{ height: '8px' }}>
+                              <div
+                                className="concept3-progress-fill-green"
+                                style={{ width: `${pctPago}%` }}
+                              ></div>
+                              <div
+                                className="concept3-progress-fill-black"
+                                style={{ width: `${100 - pctPago}%` }}
+                              ></div>
+                            </div>
+                            {!isQuitada && diasPerdidosPorAtraso > 0 && (
+                              <div className="font-mono-num" style={{ fontSize: '0.72rem', color: 'var(--red-stamp)' }}>
+                                <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                                Atrasar 1 mês gera <strong>+{formatBRL(multaJurosMensal)}</strong> de juros (atrasa sua Meta #1 em{' '}
+                                <strong>+{diasPerdidosPorAtraso} dia(s)</strong>).
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="d-flex align-items-center gap-2">
+                            {onPagarParcelaDivida && !isQuitada && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-ink py-1 px-2 font-mono-num fw-bold"
+                                style={{ fontSize: '0.74rem' }}
+                                onClick={() => onPagarParcelaDivida(d.id, d.descricaoDivida)}
+                                title="Dar baixa em +1 parcela paga"
+                              >
+                                <i className="bi bi-check2-circle me-1"></i>
+                                Pagar Parcela (+1)
+                              </button>
+                            )}
+                            {onExcluirDivida && (
+                              <button
+                                type="button"
+                                className="btn btn-sm py-1 px-2 font-mono-num"
+                                style={{
+                                  backgroundColor: 'var(--red-soft)',
+                                  color: 'var(--red-stamp)',
+                                  border: '1px solid var(--red-stamp)',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                }}
+                                onClick={() => onExcluirDivida(d.id, d.descricaoDivida)}
+                                title="Excluir este compromisso"
+                              >
+                                <i className="bi bi-trash3 me-1"></i>
+                                Excluir
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <small>Total: {formatBRL(d.valorTotal)}</small>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -1049,17 +1276,19 @@ export default function PainelPatrimonio360({
                     ...novaDivida,
                     valorTotal: Number(novaDivida.valorTotal),
                     valorParcela: Number(novaDivida.valorParcela),
-                    totalParcelas: Number(novaDivida.totalParcelas),
+                    totalParcelas: Number(novaDivida.totalParcelas || 12),
+                    parcelasPagas: Number(novaDivida.parcelasPagas || 0),
+                    taxaJurosAtraso: Number(novaDivida.taxaJurosAtraso || 0),
                   });
                   setNovaDivida({ ...novaDivida, descricaoDivida: '', valorTotal: '', valorParcela: '' });
                 }}
                 className="row g-2"
               >
-                <div className="col-12 col-md-4">
+                <div className="col-12 col-md-5">
                   <input
                     type="text"
                     className="form-control form-control-sm input-ledger"
-                    placeholder="Descrição (ex: Financiamento / Cartão)"
+                    placeholder="Descrição (ex: Financiamento Moto / Cartão)"
                     required
                     value={novaDivida.descricaoDivida}
                     onChange={(e) => setNovaDivida({ ...novaDivida, descricaoDivida: e.target.value })}
@@ -1068,6 +1297,8 @@ export default function PainelPatrimonio360({
                 <div className="col-6 col-md-3">
                   <input
                     type="number"
+                    step="0.01"
+                    min="0.01"
                     className="form-control form-control-sm input-ledger font-mono-num"
                     placeholder="Valor Total (R$)"
                     required
@@ -1075,15 +1306,64 @@ export default function PainelPatrimonio360({
                     onChange={(e) => setNovaDivida({ ...novaDivida, valorTotal: e.target.value })}
                   />
                 </div>
-                <div className="col-6 col-md-3">
+                <div className="col-6 col-md-2">
                   <input
                     type="number"
+                    step="0.01"
+                    min="0.01"
                     className="form-control form-control-sm input-ledger font-mono-num"
-                    placeholder="Parcela Mensal (R$)"
+                    placeholder="Parcela (R$)"
                     required
                     value={novaDivida.valorParcela}
                     onChange={(e) => setNovaDivida({ ...novaDivida, valorParcela: e.target.value })}
                   />
+                </div>
+                <div className="col-4 col-md-2">
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-control form-control-sm input-ledger font-mono-num"
+                    placeholder="Nº Parc."
+                    title="Total de Parcelas"
+                    required
+                    value={novaDivida.totalParcelas}
+                    onChange={(e) => setNovaDivida({ ...novaDivida, totalParcelas: e.target.value })}
+                  />
+                </div>
+                <div className="col-8 col-md-4">
+                  <div className="input-group input-group-sm">
+                    <span className="input-group-text font-mono-num small">Venc.</span>
+                    <input
+                      type="date"
+                      className="form-control input-ledger font-mono-num"
+                      required
+                      value={novaDivida.dataVencimentoMensal}
+                      onChange={(e) => setNovaDivida({ ...novaDivida, dataVencimentoMensal: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="input-group input-group-sm">
+                    <span className="input-group-text font-mono-num small">Juros %</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      className="form-control input-ledger font-mono-num"
+                      value={novaDivida.taxaJurosAtraso}
+                      onChange={(e) => setNovaDivida({ ...novaDivida, taxaJurosAtraso: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <select
+                    className="form-select form-select-sm input-ledger font-mono-num"
+                    value={novaDivida.statusDivida}
+                    onChange={(e) => setNovaDivida({ ...novaDivida, statusDivida: e.target.value })}
+                  >
+                    <option value="EM_DIA">Status: EM DIA</option>
+                    <option value="ATRASADA">Status: ATRASADA</option>
+                  </select>
                 </div>
                 <div className="col-12 col-md-2">
                   <button type="submit" className="btn btn-sm btn-ink w-100">
@@ -1098,9 +1378,31 @@ export default function PainelPatrimonio360({
         {/* ABA 4: EXTRATO COMPLETO DO LIVRO-CAIXA */}
         {abaAtiva === 'EXTRATO' && (
           <div>
-            <h3 className="h5 font-editorial fw-bold mb-3">
-              Escrituração Completa de Transações (<code>TB_FIN_TRANSACAO</code>)
-            </h3>
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <div>
+                <h3 className="h5 font-editorial fw-bold mb-0">
+                  Escrituração Completa de Transações (<code>TB_FIN_TRANSACAO</code>)
+                </h3>
+                <small style={{ color: 'var(--ink-secondary)' }}>
+                  Visualize ou estorne lançamentos (Gasto Livre, Aporte em Meta, Custo Fixo ou Receita Extra).
+                </small>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <select
+                  className="form-select form-select-sm input-ledger font-mono-num"
+                  style={{ width: 'auto' }}
+                  value={filtroNaturezaExtrato}
+                  onChange={(e) => setFiltroNaturezaExtrato(e.target.value)}
+                >
+                  <option value="TODOS">Todas as Naturezas ({transacoes.length})</option>
+                  <option value="GASTO_LIVRE">Gastos Livres</option>
+                  <option value="APORTE_META">Aportes em Meta</option>
+                  <option value="CUSTO_FIXO">Custos Fixos</option>
+                  <option value="RECEITA">Receitas Extras</option>
+                </select>
+              </div>
+            </div>
+
             <div className="table-responsive">
               <table className="table table-sm align-middle font-mono-num mb-0">
                 <thead style={{ backgroundColor: 'var(--bg-muted)' }}>
@@ -1110,43 +1412,69 @@ export default function PainelPatrimonio360({
                     <th>Categoria</th>
                     <th>Natureza</th>
                     <th className="text-end">Valor</th>
+                    <th className="text-end">Estornar</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {transacoes.map((t) => (
-                    <tr key={t.id}>
-                      <td>{formatDataBR(t.dataTransacao)}</td>
-                      <td className="fw-semibold">{t.descricao}</td>
-                      <td>{t.categoria}</td>
-                      <td>
-                        <span
-                          className={
-                            t.tipoTransacao === 'GASTO_LIVRE'
-                              ? 'stamp-badge-danger'
-                              : t.tipoTransacao === 'RECEITA'
-                              ? 'stamp-badge-success'
-                              : 'stamp-badge-amber'
-                          }
+                  {transacoes
+                    .filter(
+                      (t) =>
+                        filtroNaturezaExtrato === 'TODOS' ||
+                        t.tipoTransacao === filtroNaturezaExtrato
+                    )
+                    .map((t) => (
+                      <tr key={t.id}>
+                        <td>{formatDataBR(t.dataTransacao)}</td>
+                        <td className="fw-semibold">{t.descricao}</td>
+                        <td>{t.categoria}</td>
+                        <td>
+                          <span
+                            className={
+                              t.tipoTransacao === 'GASTO_LIVRE'
+                                ? 'stamp-badge-danger'
+                                : t.tipoTransacao === 'RECEITA' || t.tipoTransacao === 'APORTE_META'
+                                ? 'stamp-badge-success'
+                                : 'stamp-badge-amber'
+                            }
+                          >
+                            {t.tipoTransacao}
+                          </span>
+                        </td>
+                        <td
+                          className="text-end fw-bold"
+                          style={{
+                            color:
+                              t.tipoTransacao === 'RECEITA'
+                                ? 'var(--green-dollar)'
+                                : t.tipoTransacao === 'GASTO_LIVRE'
+                                ? 'var(--red-stamp)'
+                                : 'var(--ink-primary)',
+                          }}
                         >
-                          {t.tipoTransacao}
-                        </span>
-                      </td>
-                      <td
-                        className="text-end fw-bold"
-                        style={{
-                          color:
-                            t.tipoTransacao === 'RECEITA'
-                              ? 'var(--green-dollar)'
-                              : t.tipoTransacao === 'GASTO_LIVRE'
-                              ? 'var(--red-stamp)'
-                              : 'var(--ink-primary)',
-                        }}
-                      >
-                        {t.tipoTransacao === 'RECEITA' ? '+' : '-'}{' '}
-                        {formatBRL(t.valorTransacao)}
-                      </td>
-                    </tr>
-                  ))}
+                          {t.tipoTransacao === 'RECEITA' ? '+' : '-'}{' '}
+                          {formatBRL(t.valorTransacao)}
+                        </td>
+                        <td className="text-end">
+                          {onExcluirTransacao && (
+                            <button
+                              type="button"
+                              className="btn btn-sm py-0 px-2 font-mono-num"
+                              style={{
+                                backgroundColor: 'var(--red-soft)',
+                                color: 'var(--red-stamp)',
+                                border: '1px solid var(--red-stamp)',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                              }}
+                              onClick={() => onExcluirTransacao(t.id, t.descricao)}
+                              title="Estornar/excluir este lançamento do Livro-Caixa"
+                            >
+                              <i className="bi bi-trash3"></i>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

@@ -9,6 +9,8 @@ import com.example.FintechFiap.model.Investimento;
 public interface InvestimentoRepository extends JpaRepository<Investimento, String>{
     List<Investimento> findByUsuarioId(String usuarioId);
 
+    List<Investimento> findByMetaId(String metaId);
+
     boolean existsByUsuarioId(String usuarioId);
     
 }

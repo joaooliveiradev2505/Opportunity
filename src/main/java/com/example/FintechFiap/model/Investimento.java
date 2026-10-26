@@ -2,6 +2,7 @@ package com.example.FintechFiap.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,6 +24,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Investimento {
     @Id 
     @GeneratedValue(strategy = GenerationType.UUID)

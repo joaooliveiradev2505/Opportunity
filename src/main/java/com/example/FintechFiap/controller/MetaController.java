@@ -45,6 +45,11 @@ public class MetaController {
         return metaService.buscarPorId(id);
     }
 
+    @PutMapping("/{id}")
+    public Meta atualizar(@PathVariable String id, @RequestBody Meta meta) {
+        return metaService.atualizar(id, meta);
+    }
+
     @PutMapping("/{id}/priorizar")
     public List<Meta> priorizar(@PathVariable String id) {
         return metaService.priorizarMeta(id);
