@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatBRL, formatDataBR } from '../services/api';
 
 export default function PainelPatrimonio360({
@@ -86,6 +86,15 @@ export default function PainelPatrimonio360({
   const [dragCard, setDragCard] = useState(null);
   const [hoveredMetaId, setHoveredMetaId] = useState(null);
   const [promotedMeta, setPromotedMeta] = useState(null);
+  const [larguraTela, setLarguraTela] = useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth : 1200)
+  );
+
+  useEffect(() => {
+    const handleResize = () => setLarguraTela(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const acionarPromocaoMeta = (metaId, fromX = -60, fromRot = -5, viaClick = false) => {
     if (!onPriorizarMeta) return;
@@ -154,7 +163,7 @@ export default function PainelPatrimonio360({
     <div className="d-flex flex-column gap-4">
       {/* Menu de Abas Estilo Seções de Jornal (Mobile-First) */}
       <div className="ledger-card p-3 p-md-4">
-        <div className="d-flex flex-wrap gap-2 mb-4 pb-3 divider-double">
+        <div className="d-flex flex-wrap gap-2 mb-4 pb-3 divider-double tabs-mobile-scroll">
           <button
             type="button"
             className={`btn btn-sm ${abaAtiva === 'METAS' ? 'btn-ink' : 'btn-outline-ink'}`}
@@ -244,33 +253,34 @@ export default function PainelPatrimonio360({
 
                     const total = metas.length;
                     const iconesMeta = ['bi-clock', 'bi-flower1', 'bi-cash-coin', 'bi-shield-check'];
+                    const fatorMobile =
+                      larguraTela < 400 ? 0.42 : larguraTela < 576 ? 0.52 : larguraTela < 768 ? 0.78 : 1;
 
                     // Calcula as coordenadas de repouso (X, Y, Rotação, Escala) garantindo sobreposição real
-                    // e folga generosa acima do quadro "PROGRESSO DAS METAS"
+                    // e adaptação responsiva em smartphones (< 576px) e tablets (< 768px)
                     const calcularSlot = (rankIndex) => {
                       if (total === 1) {
                         return { x: 0, y: 4, rot: 0, scale: 1.02, posClass: 'is-front' };
                       }
                       if (total === 2) {
-                        // Com 2 recibos: mais de 55% de sobreposição física para destacar quem está na frente!
                         if (rankIndex === 0) {
-                          return { x: 42, y: 8, rot: 1.5, scale: 1.03, posClass: 'is-front' };
+                          return { x: Math.round(42 * fatorMobile), y: 8, rot: 1.5, scale: 1.02, posClass: 'is-front' };
                         }
-                        return { x: -56, y: -14, rot: -6, scale: 0.94, posClass: 'is-back-left' };
+                        return { x: Math.round(-56 * fatorMobile), y: -12, rot: -6, scale: 0.94, posClass: 'is-back-left' };
                       }
                       // Com 3 ou mais recibos (leque de cartas centralizado)
                       if (rankIndex === 0) {
-                        return { x: 0, y: 10, rot: 0, scale: 1.03, posClass: 'is-front' };
+                        return { x: 0, y: 10, rot: 0, scale: 1.02, posClass: 'is-front' };
                       }
                       if (rankIndex === 1) {
-                        return { x: -104, y: -14, rot: -6.5, scale: 0.94, posClass: 'is-back-left' };
+                        return { x: Math.round(-104 * fatorMobile), y: -12, rot: -6.5, scale: 0.94, posClass: 'is-back-left' };
                       }
                       if (rankIndex === 2) {
-                        return { x: 104, y: -10, rot: 6.5, scale: 0.94, posClass: 'is-back-right' };
+                        return { x: Math.round(104 * fatorMobile), y: -8, rot: 6.5, scale: 0.94, posClass: 'is-back-right' };
                       }
                       return {
-                        x: 138 + (rankIndex - 3) * 18,
-                        y: -18,
+                        x: Math.round((138 + (rankIndex - 3) * 18) * fatorMobile),
+                        y: -16,
                         rot: 9.5,
                         scale: 0.89,
                         posClass: 'is-back-extra',

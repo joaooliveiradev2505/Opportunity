@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatBRL, formatDataBR } from '../services/api';
 
 export default function ColunaRecibosOportunidade({
@@ -25,6 +25,15 @@ export default function ColunaRecibosOportunidade({
   const [dragLog, setDragLog] = useState(null);
   const [hoveredLogId, setHoveredLogId] = useState(null);
   const [promotedLog, setPromotedLog] = useState(null);
+  const [larguraTela, setLarguraTela] = useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth : 1200)
+  );
+
+  useEffect(() => {
+    const handleResize = () => setLarguraTela(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Estados da Telinha de Visão dos Recibos Criados + Filtros de Organização
   const [modalRecibosAberto, setModalRecibosAberto] = useState(false);
@@ -388,16 +397,17 @@ export default function ColunaRecibosOportunidade({
           </div>
         ) : (
           <div>
-            {/* Palco de Recibos Verticais Sobrepostos (Fiel ao Conceito 3 + Card-Game Drag) */}
+            {/* Palco de Recibos Verticais Sobrepostos (Fiel ao Conceito 3 + Card-Game Drag Responsivo) */}
             <div
               className={`concept3-stage ${
                 dragLog && Math.hypot(dragLog.dx, dragLog.dy) > 10
                   ? 'is-dragging-active'
                   : ''
               }`}
-              style={{ height: '360px' }}
             >
               {(() => {
+                const fatorMobile =
+                  larguraTela < 400 ? 0.44 : larguraTela < 576 ? 0.54 : larguraTela < 768 ? 0.78 : 1;
                 const idAtivo =
                   focoId && logsFiltradosEOrdenados.some((l) => l.id === focoId)
                     ? focoId
@@ -422,20 +432,20 @@ export default function ColunaRecibosOportunidade({
                   }
                   if (total === 2) {
                     if (rankIdx === 0) {
-                      return { x: 36, y: 16, rot: 1.5, scale: 1.03, posClass: 'is-front' };
+                      return { x: Math.round(36 * fatorMobile), y: 14, rot: 1.5, scale: 1.02, posClass: 'is-front' };
                     }
-                    return { x: -48, y: -14, rot: -5.5, scale: 0.94, posClass: 'is-back-left' };
+                    return { x: Math.round(-48 * fatorMobile), y: -12, rot: -5.5, scale: 0.94, posClass: 'is-back-left' };
                   }
                   if (rankIdx === 0) {
-                    return { x: 0, y: 18, rot: 0, scale: 1.03, posClass: 'is-front' };
+                    return { x: 0, y: 14, rot: 0, scale: 1.02, posClass: 'is-front' };
                   }
                   if (rankIdx === 1) {
-                    return { x: -86, y: -14, rot: -6, scale: 0.93, posClass: 'is-back-left' };
+                    return { x: Math.round(-86 * fatorMobile), y: -12, rot: -6, scale: 0.93, posClass: 'is-back-left' };
                   }
                   if (rankIdx === 2) {
-                    return { x: 86, y: -10, rot: 6, scale: 0.93, posClass: 'is-back-right' };
+                    return { x: Math.round(86 * fatorMobile), y: -8, rot: 6, scale: 0.93, posClass: 'is-back-right' };
                   }
-                  return { x: 112, y: -18, rot: 9, scale: 0.88, posClass: 'is-back-extra' };
+                  return { x: Math.round(112 * fatorMobile), y: -16, rot: 9, scale: 0.88, posClass: 'is-back-extra' };
                 };
 
                 const iconesRecibo = ['bi-clock', 'bi-flower1', 'bi-cash-coin'];
