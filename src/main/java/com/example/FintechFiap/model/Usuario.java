@@ -1,5 +1,6 @@
 package com.example.FintechFiap.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario {
     @Id 
     @GeneratedValue(strategy = GenerationType.UUID)

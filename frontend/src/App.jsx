@@ -250,6 +250,11 @@ export default function App() {
           tipo: 'warning',
           mensagem: `Recibo emitido! O motor Java calculou e gravou o Custo de Oportunidade para "${novaTransacao.descricao}" na tabela TB_FIN_LOG_OPORTUNIDADE.`,
         });
+      } else if (novaTransacao.tipoTransacao === 'APORTE_META') {
+        setAlertaFeedback({
+          tipo: 'success',
+          mensagem: `Aporte "${novaTransacao.descricao}" registrado no Livro-Caixa e somado automaticamente ao saldo da sua Meta Prioridade #1 no Oracle!`,
+        });
       } else {
         setAlertaFeedback({
           tipo: 'success',
@@ -345,6 +350,62 @@ export default function App() {
     }
   };
 
+  const handleAtualizarSaldoInvestimento = async (investimentoId, dados, nomeAtivo = 'Ativo') => {
+    try {
+      setSalvando(true);
+      if (online) {
+        await api.atualizarSaldoInvestimento(investimentoId, dados);
+        await carregarDados(usuarioId);
+      } else {
+        setInvestimentos((prev) =>
+          prev.map((inv) => {
+            if (inv.id !== investimentoId) return inv;
+            const atual = Number(inv.saldoAtual || inv.valorInvestido || 0);
+            const novoSaldo =
+              dados.valorAporte !== undefined
+                ? Math.max(0, atual + Number(dados.valorAporte))
+                : Number(dados.saldoAtual ?? atual);
+            return { ...inv, saldoAtual: novoSaldo };
+          })
+        );
+      }
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Saldo do ativo "${nomeAtivo}" atualizado com sucesso no portfólio!`,
+      });
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Erro ao atualizar saldo do ativo: ${err.message}`,
+      });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleExcluirInvestimento = async (investimentoId, nomeAtivo = 'Ativo') => {
+    try {
+      setSalvando(true);
+      setInvestimentos((prev) => prev.filter((inv) => inv.id !== investimentoId));
+      if (online) {
+        await api.excluirInvestimento(investimentoId);
+        await carregarDados(usuarioId);
+      }
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Ativo "${nomeAtivo}" removido da carteira patrimonial.`,
+      });
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Erro ao excluir ativo: ${err.message}`,
+      });
+      if (online) await carregarDados(usuarioId);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   // Exclusão de recibo de Custo de Oportunidade (em caso de lançamento errado)
   const handleExcluirCustoOportunidade = async (logId, descricao = 'Lançamento') => {
     try {
@@ -372,6 +433,32 @@ export default function App() {
       if (online) {
         await carregarDados(usuarioId);
       }
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // Exclusão de qualquer lançamento direto pelo Livro-Caixa (Aba 4)
+  const handleExcluirTransacao = async (transacaoId, descricao = 'Transação') => {
+    try {
+      setSalvando(true);
+      setTransacoes((prev) => prev.filter((t) => t.id !== transacaoId));
+      setLogsOportunidade((prev) => prev.filter((l) => l.transacao?.id !== transacaoId));
+
+      if (online) {
+        await api.excluirTransacao(transacaoId);
+        await carregarDados(usuarioId);
+      }
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Lançamento "${descricao}" estornado do Livro-Caixa (TB_FIN_TRANSACAO) e saldos recalculados!`,
+      });
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Erro ao estornar lançamento: ${err.message}`,
+      });
+      if (online) await carregarDados(usuarioId);
     } finally {
       setSalvando(false);
     }
@@ -440,13 +527,69 @@ export default function App() {
       await carregarDados(usuarioId);
       setAlertaFeedback({
         tipo: 'warning',
-        mensagem: `Dívida "${novaDivida.descricao}" registrada no radar de amortização.`,
+        mensagem: `Dívida "${novaDivida.descricaoDivida || novaDivida.descricao}" registrada no radar de amortização.`,
       });
     } catch (err) {
       setAlertaFeedback({
         tipo: 'danger',
         mensagem: `Erro ao cadastrar dívida: ${err.message}`,
       });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handlePagarParcelaDivida = async (dividaId, descricaoDivida = 'Dívida') => {
+    try {
+      setSalvando(true);
+      if (online) {
+        await api.pagarParcelaDivida(dividaId);
+        await carregarDados(usuarioId);
+      } else {
+        setDividas((prev) =>
+          prev.map((d) => {
+            if (d.id !== dividaId) return d;
+            const novasPagas = Math.min(Number(d.totalParcelas || 1), Number(d.parcelasPagas || 0) + 1);
+            return {
+              ...d,
+              parcelasPagas: novasPagas,
+              statusDivida: novasPagas >= Number(d.totalParcelas || 1) ? 'QUITADA' : 'EM_DIA',
+            };
+          })
+        );
+      }
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Parcela de "${descricaoDivida}" amortizada com sucesso!`,
+      });
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Erro ao amortizar parcela: ${err.message}`,
+      });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleExcluirDivida = async (dividaId, descricaoDivida = 'Dívida') => {
+    try {
+      setSalvando(true);
+      setDividas((prev) => prev.filter((d) => d.id !== dividaId));
+      if (online) {
+        await api.excluirDivida(dividaId);
+        await carregarDados(usuarioId);
+      }
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Compromisso "${descricaoDivida}" removido do controle de passivos.`,
+      });
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Erro ao excluir dívida: ${err.message}`,
+      });
+      if (online) await carregarDados(usuarioId);
     } finally {
       setSalvando(false);
     }
@@ -476,7 +619,7 @@ export default function App() {
     .reduce((acc, t) => acc + Number(t.valorTransacao || 0), 0);
 
   const totalParcelasDividas = dividas
-    .filter((d) => d.status !== 'QUITADA')
+    .filter((d) => (d.statusDivida || d.status) !== 'QUITADA')
     .reduce((acc, d) => acc + Number(d.valorParcela || 0), 0);
 
   const totalCustosFixosEDividas = totalCustosFixosTransacoes + totalParcelasDividas;
@@ -571,7 +714,12 @@ export default function App() {
               onAportarMeta={handleAportarMeta}
               onExcluirMeta={handleExcluirMeta}
               onCriarInvestimento={handleCriarInvestimento}
+              onAtualizarSaldoInvestimento={handleAtualizarSaldoInvestimento}
+              onExcluirInvestimento={handleExcluirInvestimento}
               onCriarDivida={handleCriarDivida}
+              onPagarParcelaDivida={handlePagarParcelaDivida}
+              onExcluirDivida={handleExcluirDivida}
+              onExcluirTransacao={handleExcluirTransacao}
               saldoLivreRestante={saldoLivreRestante}
               metaPrincipal={metaPrincipal}
             />

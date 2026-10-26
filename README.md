@@ -266,11 +266,16 @@ CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
 | **Usuários** | `POST` | `/api/usuarios` | Cadastra um novo usuário no Oracle (`201 Created`) |
 | **Usuários** | `GET` | `/api/usuarios/{id}` | Busca os dados de um usuário pelo UUID |
 | **Metas** | `POST` | `/api/metas/usuario/{usuarioId}` | Cria um objetivo financeiro / Reserva de Emergência |
-| **Metas** | `GET` | `/api/metas/usuario/{usuarioId}` | Lista todas as metas de um usuário |
+| **Metas** | `GET` | `/api/metas/usuario/{usuarioId}` | Lista todas as metas de um usuário (ordenadas por prioridade) |
 | **Metas** | `GET` | `/api/metas/{id}` | Busca uma meta específica pelo UUID |
+| **Metas** | `PUT` | `/api/metas/{id}/priorizar` | Promove a meta escolhida para a Prioridade #1 e reordena as demais |
+| **Metas** | `PUT` | `/api/metas/{id}/aporte` | Soma um novo aporte (`valor`) ao saldo acumulado da meta |
+| **Metas** | `DELETE` | `/api/metas/{id}` | Exclui o recibo de meta no Oracle (`204 No Content`) |
 | **Transações** | `POST` | `/api/transacoes/usuario/{usuarioId}` | Registra transação e **aciona o Motor de Custo de Oportunidade** se for `GASTO_LIVRE` |
 | **Transações** | `GET` | `/api/transacoes/usuario/{usuarioId}` | Lista o extrato completo de transações do usuário |
-| **Custo de Oportunidade** | `GET` | `/api/transacoes/usuario/{usuarioId}/custos-oportunidade` | Lista os logs calculados (Dias de Atraso + Valor Futuro Perdido em Juros Compostos) |
+| **Transações** | `DELETE` | `/api/transacoes/{transacaoId}` | Exclui uma transação e eventuais logs vinculados (`204 No Content`) |
+| **Custo de Oportunidade** | `GET` | `/api/transacoes/usuario/{usuarioId}/custos-oportunidade` | Lista os recibos calculados (Dias de Atraso + Valor Futuro Perdido em Juros Compostos) |
+| **Custo de Oportunidade** | `DELETE` | `/api/transacoes/custos-oportunidade/{logId}` | Exclui o recibo de custo de oportunidade e estorna o lançamento errado (`204 No Content`) |
 | **Dívidas** | `POST` | `/api/dividas/usuario/{usuarioId}` | Registra uma dívida ou parcelamento do usuário |
 | **Dívidas** | `GET` | `/api/dividas/usuario/{usuarioId}` | Lista todas as dívidas do usuário |
 | **Dívidas** | `GET` | `/api/dividas/{id}` | Busca uma dívida específica pelo UUID |
@@ -417,3 +422,21 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
 3. **Impacto em Juros Compostos (`valorFuturoPerdido`):**
    $$FV = 150{,}00 \times (1 + 0{,}01)^{24\text{ meses}} = \mathbf{\text{R\$ } 190{,}46}$$
    *(O gasto de R$ 150,00 hoje representa R$ 190,46 a menos na Reserva de Emergência na data alvo de 24/10/2028).*
+
+---
+
+## 9. Planejamento das Próximas Etapas (Roadmap de Fechamento)
+
+1. **Etapa 1 — Fechamento do CRUD Completo das Abas & Refinamento da API:**
+   * Integração automática do lançamento `APORTE_META` somando no saldo da Meta Principal.
+   * Ações de **Pagar Parcela** (`PUT /api/dividas/{id}/pagar-parcela`) e **Excluir Dívida** (`DELETE /api/dividas/{id}`) + alerta de impacto de juros na Aba 3.
+   * Ações de **Atualizar Saldo** e **Excluir Ativo** (`PUT` e `DELETE /api/investimentos/{id}`) na Aba 2.
+   * Botão de exclusão direta de lançamentos na tabela do **Livro-Caixa** (Aba 4) conectado a `DELETE /api/transacoes/{transacaoId}`.
+   * Limpeza de serialização Hibernate (`@JsonIgnoreProperties`) e tratamento global de erros (`@RestControllerAdvice`).
+2. **Etapa 2 — Segurança & Autenticação (RF-01 / RNF-06):**
+   * Ocultação do `senhaHash` nas respostas JSON (`WRITE_ONLY`), criptografia de senhas com **BCrypt** e autenticação via **JWT** (`POST /api/auth/login`) integrada à tela de Login/Cadastro no Frontend.
+3. **Etapa 3 — Responsividade Mobile (RNF-02):**
+   * Adaptação da pilha de recibos sobrepostos e gestos *touch drag-and-drop* para smartphones (`320px` a `768px`), além de ajustes responsivos nos modais e tabelas.
+4. **Etapa 4 — Polimento Final & Entregáveis FIAP:**
+   * Inclusão dos scripts Python de análise preditiva/IA, bateria de testes unitários JUnit 5 e limpeza dos arquivos HTML estáticos legados.
+
