@@ -3,7 +3,7 @@ package com.example.FintechFiap.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -34,6 +34,7 @@ public class Usuario {
     @Column(name = "sexo", nullable = false, length = 10)
     private Sexo sexo = Sexo.MASCULINO;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "ds_senha_hash", nullable = false, length = 255)
     private String senhaHash;
 

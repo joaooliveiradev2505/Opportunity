@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { api, DEFAULT_USER_ID } from './services/api';
+import { api, DEFAULT_USER_ID, AUTH_TOKEN_KEY, AUTH_USER_KEY } from './services/api';
 import HeaderJornal from './components/HeaderJornal';
+import TelaLogin from './components/TelaLogin';
 import BannerOrcamentoReverso from './components/BannerOrcamentoReverso';
 import ColunaRecibosOportunidade from './components/ColunaRecibosOportunidade';
 import PainelPatrimonio360 from './components/PainelPatrimonio360';
@@ -96,7 +97,12 @@ const FALLBACK_LOGS = [
 ];
 
 export default function App() {
-  const [usuarioId, setUsuarioId] = useState(DEFAULT_USER_ID);
+  const [usuarioId, setUsuarioId] = useState(
+    () => localStorage.getItem(AUTH_USER_KEY) || DEFAULT_USER_ID
+  );
+  const [autenticado, setAutenticado] = useState(
+    () => Boolean(localStorage.getItem(AUTH_TOKEN_KEY))
+  );
   const [usuario, setUsuario] = useState(null);
   const [metas, setMetas] = useState([]);
   const [transacoes, setTransacoes] = useState([]);
@@ -204,11 +210,58 @@ export default function App() {
     carregarDados(usuarioId);
   }, [usuarioId, carregarDados]);
 
-  // 1. Handlers de Usuário
+  // 1. Handlers de Autenticação e Usuário (RF-01 / RNF-06)
+  const handleLogin = async (email, senha) => {
+    try {
+      setSalvando(true);
+      setAlertaFeedback(null);
+      if (metaPrioridadePendenteRef.current && online) {
+        await sincronizarPrioridadeSessaoNoOracle(false);
+      }
+      const resposta = await api.login(email, senha);
+      if (resposta?.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, resposta.token);
+      }
+      if (resposta?.usuario?.id) {
+        localStorage.setItem(AUTH_USER_KEY, resposta.usuario.id);
+        setUsuarioId(resposta.usuario.id);
+      }
+      setAutenticado(true);
+      setAlertaFeedback({
+        tipo: 'success',
+        mensagem: `Bem-vindo(a), ${resposta.usuario?.nome}! Sessão autenticada via BCrypt + Bearer Token.`,
+      });
+      return true;
+    } catch (err) {
+      setAlertaFeedback({
+        tipo: 'danger',
+        mensagem: `Falha na autenticação: ${err.message}`,
+      });
+      return false;
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (metaPrioridadePendenteRef.current && online) {
+      await sincronizarPrioridadeSessaoNoOracle(false);
+    }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    setAutenticado(false);
+    setUsuarioId(DEFAULT_USER_ID);
+    setAlertaFeedback({
+      tipo: 'warning',
+      mensagem: 'Sessão encerrada com segurança. Retornando ao titular padrão de demonstração.',
+    });
+  };
+
   const handleTrocarUsuario = async (novoId) => {
     if (metaPrioridadePendenteRef.current) {
       await sincronizarPrioridadeSessaoNoOracle(false);
     }
+    localStorage.setItem(AUTH_USER_KEY, novoId);
     setUsuarioId(novoId);
   };
 
@@ -216,10 +269,22 @@ export default function App() {
     try {
       setSalvando(true);
       const criado = await api.cadastrarUsuario(dadosNovoUsuario);
+      // Autentica automaticamente o titular recém-criado para emitir o token Bearer
+      try {
+        const authResp = await api.login(dadosNovoUsuario.email, dadosNovoUsuario.senhaHash);
+        if (authResp?.token) {
+          localStorage.setItem(AUTH_TOKEN_KEY, authResp.token);
+          setAutenticado(true);
+        }
+      } catch {
+        // Caso o login automático falhe, mantém o usuário selecionado pelo ID
+      }
+      localStorage.setItem(AUTH_USER_KEY, criado.id);
       setUsuarioId(criado.id);
+      setAutenticado(true);
       setAlertaFeedback({
         tipo: 'success',
-        mensagem: `Titular "${criado.nome}" registrado no Oracle com sucesso! (ID: ${criado.id})`,
+        mensagem: `Titular "${criado.nome}" registrado com senha criptografada (BCrypt) no Oracle! (ID: ${criado.id})`,
       });
     } catch (err) {
       setAlertaFeedback({
@@ -228,6 +293,17 @@ export default function App() {
       });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleAcessoDemonstracao = async () => {
+    const logou = await handleLogin('joao@opportunity.com.br', '123456');
+    if (!logou) {
+      // Caso o servidor Oracle esteja offline, entra em modo demonstração local
+      localStorage.setItem(AUTH_TOKEN_KEY, 'demo-offline-token');
+      localStorage.setItem(AUTH_USER_KEY, DEFAULT_USER_ID);
+      setUsuarioId(DEFAULT_USER_ID);
+      setAutenticado(true);
     }
   };
 
@@ -635,12 +711,28 @@ export default function App() {
   );
   const saldoLivreRestante = tetoGastoSemCulpa - totalGastosLivresMes;
 
+  if (!autenticado) {
+    return (
+      <TelaLogin
+        onLogin={handleLogin}
+        onCriarNovoUsuario={handleCriarNovoUsuario}
+        onAcessoDemonstracao={handleAcessoDemonstracao}
+        salvando={salvando}
+        erro={alertaFeedback?.tipo === 'danger' ? alertaFeedback.mensagem : null}
+        onLimparErro={() => setAlertaFeedback(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-vh-100 d-flex flex-column">
       {/* 1. CABEÇALHO EDITORIAL ESTILO JORNAL FINANCEIRO */}
       <HeaderJornal
         usuario={usuario}
         online={online}
+        autenticado={autenticado}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
         onTrocarUsuario={handleTrocarUsuario}
         onCriarNovoUsuario={handleCriarNovoUsuario}
         carregando={carregando}
