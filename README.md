@@ -1,6 +1,146 @@
-# 🎯 Fintech Opportunity - Gestão Financeira Baseada em Custo de Oportunidade
+# 🎯 Fintech Opportunity — The Opportunity Ledger
 
-Documento de Especificação de Requisitos, Modelagem e Arquitetura para Desenvolvimento da Aplicação Web **Fintech** (Projeto Anual FIAP).
+> **Bilingual Documentation / Documentação Bilíngue:**
+> [🇺🇸 **Read in English**](#-english-documentation) | [🇧🇷 **Ler em Português**](#-documentação-em-português)
+
+![Java 21](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot 3](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Oracle SQL](https://img.shields.io/badge/Oracle_Database-19c-F80000?style=for-the-badge&logo=oracle&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-BCrypt_%2B_Bearer-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![JUnit 5](https://img.shields.io/badge/Tests-JUnit_5_%2B_Mockito-25A162?style=for-the-badge&logo=junit5&logoColor=white)
+
+---
+
+# 🇺🇸 English Documentation
+
+## 1. Executive Summary & Product Vision
+
+**Fintech Opportunity (*"The Opportunity Ledger"*)** is a full-stack personal finance and behavioral economics platform that flips traditional budgeting on its head. Instead of merely tracking past expenses, the platform combines **Reverse Budgeting (*Pay Yourself First*)** with a real-time **Opportunity Cost Engine** that translates non-essential spending and high-interest debt into **days of delay** and **compounded future wealth lost** toward the user's top life goals (Emergency Fund, Retirement, First Home, Education, etc.).
+
+### Key Value Propositions
+* **Reverse Budgeting (*Guilt-Free Safe-to-Spend*):** Automatically computes how much the user can safely spend in the current month *after* deducting fixed bills, debt installments, and planned goal contributions:
+  $$\text{Free Spend Limit} = \sum(\text{Monthly Income}) - \sum(\text{Goal Contributions}) - \sum(\text{Fixed Costs}) - \sum(\text{Debt Installments})$$
+* **Real-Time Opportunity Cost Engine:** Every discretionary expense (`GASTO_LIVRE`) triggers an automatic calculation of:
+  1. **Goal Delay (in Days):** How many days the expense pushes back the user's #1 priority goal based on their daily saving rate.
+  2. **Compounded Future Value Lost ($FV$):** How much that exact expense would have grown by the goal's target date using compound interest:
+     $$FV = PV \times (1 + i)^n$$
+* **360º Net Worth & Interest Rate Asymmetry Detection:** Consolidates Fixed/Variable Income investments against active liabilities, calculating **Net Worth**, **Debt-to-Asset Ratio**, and alerting the user whenever debt interest rates exceed portfolio returns.
+* **Micro-Habit Time Machine & AI Advisor:** Interactive drawer and Python analytics engine that project daily/weekly micro-habits across **1, 5, and 10-year horizons** alongside an intelligent financial chatbot.
+* **Editorial UI Design (*"The Opportunity Ledger"*):** Custom interface combining *Neo-Brutalist Swiss Grids* and *Editorial Financial Paper* aesthetics with interactive **Thermal Opportunity Receipts** animated via Framer Motion.
+
+---
+
+## 2. System Architecture & Engineering Highlights
+
+```text
++-----------------------------------------------------------------------+
+|                        CLIENT LAYER (Frontend SPA)                    |
+|  - React 19 + Vite + Bootstrap 5 + Framer Motion                      |
+|  - Editorial "Opportunity Ledger" UI & Interactive Thermal Receipts   |
+|  - Responsive Mobile/Desktop Layout + AI Financial Advisor Drawer     |
++-----------------------------------------------------------------------+
+                                    |
+                         HTTP / REST API (JSON + Bearer Token)
+                                    |
++-----------------------------------------------------------------------+
+|                        SERVER LAYER (Backend API)                     |
+|  - Java 21 + Spring Boot 3 (REST Controllers, Services, DTOs)         |
+|  - Financial Engine: BigDecimal precision & Compound Interest Math    |
+|  - Stateless Security: Spring Security 6 + BCrypt + Bearer Auth       |
+|  - Python 3 Analytics & AI Financial Advisor CLI Engine               |
++-----------------------------------------------------------------------+
+                                    |
+                         Spring Data JPA / Hibernate
+                                    |
++-----------------------------------------------------------------------+
+|                        PERSISTENCE LAYER (Database)                   |
+|  - Oracle Database 19c (3NF Relational Schema: TB_FIN_*)              |
++-----------------------------------------------------------------------+
+```
+
+### Engineering Highlights
+1. **Strict Monetary Precision (`BigDecimal`):** All financial calculations, compound interest projections, and daily savings rates in `DashboardOportunidadeService` and `TransacaoService` use `BigDecimal` with `RoundingMode.HALF_UP` to prevent IEEE 754 floating-point drift.
+2. **Transactional Domain Side-Effects:**
+   * Creating a `GASTO_LIVRE` (Free Spend) transaction automatically computes and persists an `OpportunityCostLog` (`TB_FIN_LOG_OPORTUNIDADE`) linked to the user's #1 priority goal.
+   * Creating or deleting an `APORTE_META` (Goal Deposit) transaction atomically increments or reverses the accumulated balance on the user's priority goal.
+   * Paying the final installment on a liability (`PUT /api/dividas/{id}/pagar-parcela`) automatically transitions the debt status to `QUITADA` (Paid Off).
+3. **Stateless Security & Data Privacy:** Passwords are encrypted using **BCrypt** (`PasswordEncoder`), hidden from JSON serialization via `@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)`, and protected via a custom stateless `JwtAuthenticationFilter` (`Bearer` token).
+4. **Automated Unit Testing:** Validated with **JUnit 5** and **Mockito** (`FintechFiapApplicationTests.java`), covering Reverse Budget math, Opportunity Cost compound interest, Net Worth consolidation, and transactional goal balance updates.
+
+---
+
+## 3. Quickstart — Running the Project Locally
+
+### Prerequisites
+* **Java JDK 21** and **Maven** (`./mvnw` wrapper included)
+* **Node.js 20+** and **npm**
+* **Python 3.10+**
+* **Oracle Database** credentials (or FIAP Oracle instance)
+
+### Step-by-Step Setup
+1. **Configure Environment Variables (`.env`):**
+   Create a `.env` file in the project root (`FintechFiap/`):
+   ```properties
+   DB_USERNAME=your_oracle_user
+   DB_PASSWORD=your_oracle_password
+   ```
+   *(The complete Oracle DDL script is available in [`schema-oracle.sql`](schema-oracle.sql)).*
+
+2. **Run the Spring Boot Backend (Port `8080`):**
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   * **Unified Production Web App:** `http://localhost:8080`
+   * **Swagger UI (OpenAPI 3):** `http://localhost:8080/swagger-ui.html`
+
+3. **Run the React Frontend in Development Mode (Port `5173`):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. **Run the Python Opportunity Cost & AI Advisor Engine:**
+   ```bash
+   python3 python/motor_oportunidade_ia.py
+   # Export complete financial diagnosis as JSON:
+   python3 python/motor_oportunidade_ia.py --json
+   ```
+
+5. **Run the Automated Unit Test Suite (JUnit 5 + Mockito):**
+   ```bash
+   ./mvnw test
+   ```
+
+---
+
+## 4. REST API Overview
+
+| Resource | HTTP Method | Endpoint | Description |
+| :--- | :---: | :--- | :--- |
+| **Auth** | `POST` | `/api/auth/login` | Authenticates user with BCrypt and issues a stateless Bearer token (`200 OK`) |
+| **Users** | `POST` | `/api/usuarios` | Registers a new user with BCrypt password hashing (`201 Created`) |
+| **Users** | `GET` / `PUT` | `/api/usuarios/{id}` | Retrieves or updates user profile, monthly income, and investor profile |
+| **Dashboard 360º** | `GET` | `/api/dashboard/usuario/{usuarioId}` | Computes Reverse Budget, Safe-to-Spend limit, Net Worth, and AI Insights |
+| **Simulator** | `GET` | `/api/dashboard/simular-habito` | Simulates a recurring micro-habit across 1, 5, and 10-year compound horizons |
+| **Goals** | `POST` / `GET` | `/api/metas/usuario/{usuarioId}` | Creates or lists financial goals ordered by priority |
+| **Goals** | `PUT` | `/api/metas/{id}/priorizar` | Promotes a goal to Priority #1 and reorders remaining goals |
+| **Goals** | `PUT` | `/api/metas/{id}/aporte` | Adds a new contribution directly to a goal's accumulated balance |
+| **Goals** | `PUT` / `DELETE` | `/api/metas/{id}` | Updates or deletes a financial goal (`204 No Content`) |
+| **Transactions** | `POST` | `/api/transacoes/usuario/{usuarioId}` | Records transaction, triggers Opportunity Cost Engine (`GASTO_LIVRE`) or updates Goal #1 (`APORTE_META`) |
+| **Transactions** | `GET` / `PUT` / `DELETE` | `/api/transacoes/...` | Lists, edits, or deletes transactions (automatically reversing linked logs/balances) |
+| **Opportunity Logs** | `GET` / `DELETE` | `/api/transacoes/usuario/{usuarioId}/custos-oportunidade` | Lists or deletes calculated Opportunity Cost thermal receipts |
+| **Debts** | `POST` / `GET` / `PUT` / `DELETE` | `/api/dividas/...` | Full CRUD for liabilities + `PUT /api/dividas/{id}/pagar-parcela` to pay installments |
+| **Investments** | `POST` / `GET` / `PUT` / `DELETE` | `/api/investimentos/...` | Full CRUD for Fixed/Variable income assets + `PUT /api/investimentos/{id}/saldo` |
+
+---
+---
+
+# 🇧🇷 Documentação em Português
+
+Documento de Especificação de Requisitos, Modelagem e Arquitetura para Desenvolvimento da Aplicação Web **Fintech Opportunity** (Projeto Anual FIAP).
 
 ---
 
@@ -85,172 +225,122 @@ O **Fintech Opportunity** é uma plataforma web responsiva de planejamento finan
 
 ## 4. Modelagem de Dados Relacional (DDL Padrão Oracle SQL)
 
+O script completo encontra-se em [`schema-oracle.sql`](schema-oracle.sql):
+
 ```sql
 -- 1. Tabela de Usuários
-CREATE TABLE T_FIN_USUARIO (
+CREATE TABLE TB_FIN_USUARIO (
     id_usuario VARCHAR2(36) PRIMARY KEY,
     nm_usuario VARCHAR2(100) NOT NULL,
     ds_email VARCHAR2(100) UNIQUE NOT NULL,
     ds_senha_hash VARCHAR2(255) NOT NULL,
-    tp_perfil_investidor VARCHAR2(20) DEFAULT 'MODERADO', -- 'CONSERVADOR', 'MODERADO', 'AGRESSIVO'
-    nr_dia_fechamento NUMBER(2) DEFAULT 5,
-    dt_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    dt_nascimento DATE NOT NULL,
+    ds_sexo VARCHAR2(20) NOT NULL,
+    vl_renda NUMBER(12, 2) DEFAULT 0.00 NOT NULL,
+    st_renda_variavel NUMBER(1) DEFAULT 0 NOT NULL,
+    tp_perfil_investidor VARCHAR2(20) DEFAULT 'MODERADO' NOT NULL,
+    nr_dia_fechamento NUMBER(2) DEFAULT 5 NOT NULL,
+    dt_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- 2. Tabela de Objetivos Financeiros (Metas e Reserva de Emergência)
-CREATE TABLE T_FIN_META (
+CREATE TABLE TB_FIN_META (
     id_meta VARCHAR2(36) PRIMARY KEY,
     id_usuario VARCHAR2(36) NOT NULL,
     nm_meta VARCHAR2(100) NOT NULL,
     vl_alvo NUMBER(12, 2) NOT NULL,
-    vl_atual NUMBER(12, 2) DEFAULT 0.00,
+    vl_atual NUMBER(12, 2) DEFAULT 0.00 NOT NULL,
     vl_aporte_mensal NUMBER(12, 2) NOT NULL,
     dt_alvo DATE NOT NULL,
-    nr_prioridade NUMBER(1) DEFAULT 3, -- 1 (Baixa) a 5 (Alta)
-    tx_rendimento_anual NUMBER(5, 2) DEFAULT 10.00, -- Ex: 10% a.a.
-    st_reserva_emergencia CHAR(1) DEFAULT 'N', -- 'S' ou 'N'
-    CONSTRAINT fk_meta_usuario FOREIGN KEY (id_usuario) REFERENCES T_FIN_USUARIO(id_usuario) ON DELETE CASCADE
+    nr_prioridade NUMBER(1) DEFAULT 3 NOT NULL,
+    tx_rendimento_anual NUMBER(5, 2) DEFAULT 10.00 NOT NULL,
+    st_reserva_emergencia NUMBER(1) DEFAULT 0 NOT NULL,
+    dt_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_meta_usuario FOREIGN KEY (id_usuario) REFERENCES TB_FIN_USUARIO(id_usuario) ON DELETE CASCADE
 );
 
 -- 3. Tabela de Transações (Receitas, Gastos Fixos, Gastos Livres e Aportes)
-CREATE TABLE T_FIN_TRANSACAO (
+CREATE TABLE TB_FIN_TRANSACAO (
     id_transacao VARCHAR2(36) PRIMARY KEY,
     id_usuario VARCHAR2(36) NOT NULL,
     ds_transacao VARCHAR2(150) NOT NULL,
     vl_transacao NUMBER(12, 2) NOT NULL,
-    tp_transacao VARCHAR2(20) NOT NULL, -- 'INCOME', 'FIXED_COST', 'FREE_SPEND', 'GOAL_DEPOSIT'
-    ds_categoria VARCHAR2(50), -- 'SALARIO', 'FREELANCE', 'ALUGUEL', 'LAZER', 'DELIVERY', etc.
+    tp_transacao VARCHAR2(20) NOT NULL,
+    ds_categoria VARCHAR2(50),
     dt_transacao DATE NOT NULL,
-    CONSTRAINT fk_transacao_usuario FOREIGN KEY (id_usuario) REFERENCES T_FIN_USUARIO(id_usuario) ON DELETE CASCADE
+    CONSTRAINT fk_transacao_usuario FOREIGN KEY (id_usuario) REFERENCES TB_FIN_USUARIO(id_usuario) ON DELETE CASCADE
 );
 
 -- 4. Tabela de Controle de Dívidas
-CREATE TABLE T_FIN_DIVIDA (
+CREATE TABLE TB_FIN_DIVIDA (
     id_divida VARCHAR2(36) PRIMARY KEY,
     id_usuario VARCHAR2(36) NOT NULL,
     ds_divida VARCHAR2(150) NOT NULL,
     vl_total NUMBER(12, 2) NOT NULL,
     vl_parcela NUMBER(12, 2) NOT NULL,
     nr_total_parcelas NUMBER(4) NOT NULL,
-    nr_parcelas_pagas NUMBER(4) DEFAULT 0,
+    nr_parcelas_pagas NUMBER(4) DEFAULT 0 NOT NULL,
     dt_vencimento_mensal DATE NOT NULL,
-    tx_juros_atraso NUMBER(5, 2) DEFAULT 0.00,
-    st_divida VARCHAR2(20) DEFAULT 'EM_DIA', -- 'EM_DIA', 'ATRASADA', 'QUITADA'
-    CONSTRAINT fk_divida_usuario FOREIGN KEY (id_usuario) REFERENCES T_FIN_USUARIO(id_usuario) ON DELETE CASCADE
+    tx_juros_atraso NUMBER(5, 2) DEFAULT 0.00 NOT NULL,
+    st_divida VARCHAR2(20) DEFAULT 'EM_DIA' NOT NULL,
+    CONSTRAINT fk_divida_usuario FOREIGN KEY (id_usuario) REFERENCES TB_FIN_USUARIO(id_usuario) ON DELETE CASCADE
 );
 
 -- 5. Tabela de Carteira de Investimentos
-CREATE TABLE T_FIN_INVESTIMENTO (
+CREATE TABLE TB_FIN_INVESTIMENTO (
     id_investimento VARCHAR2(36) PRIMARY KEY,
     id_usuario VARCHAR2(36) NOT NULL,
     id_meta VARCHAR2(36),
     nm_ativo VARCHAR2(100) NOT NULL,
-    tp_modalidade VARCHAR2(20) NOT NULL, -- 'RENDA_FIXA', 'RENDA_VARIAVEL'
-    tp_produto VARCHAR2(30) NOT NULL, -- 'TESOURO_SELIC', 'TESOURO_IPCA', 'CDB', 'LCI_LCA', 'FII', 'ACOES', 'ETF', 'CRIPTO'
+    tp_modalidade VARCHAR2(20) NOT NULL,
+    tp_produto VARCHAR2(30) NOT NULL,
     vl_investido NUMBER(12, 2) NOT NULL,
     vl_saldo_atual NUMBER(12, 2) NOT NULL,
-    ds_risco VARCHAR2(20) NOT NULL, -- 'BAIXO', 'MODERADO', 'ALTO', 'MUITO_ALTO'
-    ds_liquidez VARCHAR2(20) NOT NULL, -- 'ALTA', 'MEDIA', 'BAIXA'
-    st_isento_ir CHAR(1) DEFAULT 'N', -- 'S' ou 'N'
+    ds_risco VARCHAR2(20) NOT NULL,
+    ds_liquidez VARCHAR2(20) NOT NULL,
+    st_isento_ir NUMBER(1) DEFAULT 0 NOT NULL,
     dt_aplicacao DATE NOT NULL,
-    CONSTRAINT fk_invest_usuario FOREIGN KEY (id_usuario) REFERENCES T_FIN_USUARIO(id_usuario) ON DELETE CASCADE,
-    CONSTRAINT fk_invest_meta FOREIGN KEY (id_meta) REFERENCES T_FIN_META(id_meta) ON DELETE SET NULL
+    CONSTRAINT fk_invest_usuario FOREIGN KEY (id_usuario) REFERENCES TB_FIN_USUARIO(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT fk_invest_meta FOREIGN KEY (id_meta) REFERENCES TB_FIN_META(id_meta) ON DELETE SET NULL
 );
 
 -- 6. Histórico de Log de Custo de Oportunidade
-CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
+CREATE TABLE TB_FIN_LOG_OPORTUNIDADE (
     id_log VARCHAR2(36) PRIMARY KEY,
     id_transacao VARCHAR2(36) NOT NULL,
     id_meta_impactada VARCHAR2(36) NOT NULL,
     nr_dias_atraso NUMBER(6) NOT NULL,
     vl_futuro_perdido NUMBER(12, 2) NOT NULL,
-    dt_calculo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_log_transacao FOREIGN KEY (id_transacao) REFERENCES T_FIN_TRANSACAO(id_transacao) ON DELETE CASCADE,
-    CONSTRAINT fk_log_meta FOREIGN KEY (id_meta_impactada) REFERENCES T_FIN_META(id_meta) ON DELETE CASCADE
+    dt_calculo TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_log_transacao FOREIGN KEY (id_transacao) REFERENCES TB_FIN_TRANSACAO(id_transacao) ON DELETE CASCADE,
+    CONSTRAINT fk_log_meta FOREIGN KEY (id_meta_impactada) REFERENCES TB_FIN_META(id_meta) ON DELETE CASCADE
 );
 ```
 
 ---
 
-## 5. Arquitetura da Aplicação e Stack Obrigatória FIAP
+## 5. Cronograma de Desenvolvimento (As 7 Fases da FIAP)
 
-```
-+-------------------------------------------------------------------+
-|                        CLIENT (Camada View)                       |
-|  - HTML5, CSS3, JavaScript (ES6+)                                 |
-|  - ReactJS + Bootstrap 5 (Layout Responsivo Mobile/Desktop)       |
-|  - Dashboard Interativo + Interface do Chatbot Financeiro         |
-+-------------------------------------------------------------------+
-                                  |
-                            HTTP / REST API (JSON)
-                                  |
-+-------------------------------------------------------------------+
-|                        SERVER (Camada Model / API)                |
-|  - API Web Service em Java (Spring Boot / POO)                    |
-|  - Motor Preditivo de Custo de Oportunidade & Juros Compostos     |
-|  - Módulo de Algoritmos & Inteligência Artificial / Chatbot (Py)  |
-|  - Autenticação e Segurança JWT                                   |
-+-------------------------------------------------------------------+
-                                  |
-                             JDBC / JPA
-                                  |
-+-------------------------------------------------------------------+
-|                    DATABASE (Persistência Relacional)             |
-|  - Oracle Database (Tabelas T_FIN_*)                              |
-+-------------------------------------------------------------------+
-```
+* **Fase 1:** Gestão Ágil (Scrum), Escopo, Algoritmos em Python & IA (`python/motor_oportunidade_ia.py`).
+* **Fase 2:** Casos de Uso, Evolução de Algoritmos e Prototipação UI/UX (*The Opportunity Ledger*).
+* **Fase 3:** Modelagem de Banco de Dados Relacional (MER/DER e Dicionário de Dados Oracle).
+* **Fase 4:** Desenvolvimento da Camada View (ReactJS + Bootstrap 5 + Framer Motion).
+* **Fase 5:** Programação Orientada a Objetos e Camada Model em Java 21 (Spring Boot 3).
+* **Fase 6:** Persistência em Java (Spring Data JPA / Hibernate) e Banco de Dados Oracle (`TB_FIN_*`).
+* **Fase 7:** Integração Full-Stack, Segurança JWT/BCrypt, Chatbot IA e Testes Automatizados (JUnit 5 + Mockito).
 
 ---
 
-## 6. Cronograma de Desenvolvimento (As 7 Fases da FIAP)
+## 6. Como Executar o Projeto Full-Stack (Backend Java + Frontend React + Python IA)
 
-### Fase 1: Gestão Ágil, Escopo, Algoritmos em Python & IA
-* Formalização do projeto e escopo com artefatos do **Scrum** (Product Backlog, Sprint Backlog, controle do orçamento de R$ 30 mil).
-* Preparação da infraestrutura e ambiente de desenvolvimento.
-* Desenvolvimento dos primeiros algoritmos financeiros e lógica de cálculo de Custo de Oportunidade em **Python**.
-* Concepção inicial do uso de **Inteligência Artificial** na análise de dados financeiros.
-
-### Fase 2: Casos de Uso, Algoritmos e Prototipação (UI/UX)
-* Documentação de Casos de Uso e regras de negócio (Receitas, Gastos, Dívidas, Investimentos e Metas).
-* Evolução dos algoritmos financeiros.
-* Idealização e desenho dos protótipos de tela (Wireframes / Mockups responsivos) da solução Fintech.
-
-### Fase 3: Modelagem de Banco de Dados Relacional
-* Modelagem Conceitual (MER/DER) e Lógica do banco de dados.
-* Documentação do Dicionário de Dados contemplando usuários, receitas, despesas, dívidas, investimentos, metas e logs de oportunidade.
-* Refinamento dos algoritmos integrados às estruturas de dados.
-
-### Fase 4: Desenvolvimento da Camada View (Frontend Web)
-* Construção de todas as interfaces do sistema utilizando **HTML, CSS, Bootstrap, JavaScript e ReactJS**.
-* Implementação do layout responsivo e dashboards interativos (Orçamento Reverso, Simulador de Micro-hábitos, Carteira de Investimentos e Controle de Dívidas).
-* Testes de compatibilidade no Google Chrome, Mozilla Firefox e Microsoft Edge.
-
-### Fase 5: Programação Orientada a Objetos e Camada Model em Java
-* Documentação de comunicação e arquitetura do sistema.
-* Elaboração do **Diagrama de Classes UML**.
-* Implementação das classes de domínio, regras de negócio (POO) e início da camada *Model* utilizando **Java**.
-
-### Fase 6: Persistência em Java e Banco de Dados Oracle
-* Criação física das tabelas (`T_FIN_*`), constraints e sequences no **Oracle Database**.
-* Integração da camada *Model* em Java com o banco de dados Oracle (DAO / Repository) para manipulação e persistência dos dados.
-
-### Fase 7: Integração Full-Stack, Chatbot IA e Testes Finais
-* Integração completa entre a camada *View* (ReactJS + Bootstrap) e a API *Model* (Java + Oracle).
-* Consolidação do **Chatbot com IA** para atendimento e consultoria financeira ao usuário.
-* Execução da bateria de testes de software, validação de qualidade e entrega final do projeto.
-
----
-
-## 7. Como Executar o Projeto Full-Stack (Backend Java + Frontend React + Python IA)
-
-### 7.1 Pré-requisitos e Configuração de Variáveis (`.env`)
+### 6.1 Pré-requisitos e Configuração de Variáveis (`.env`)
 1. **Java JDK 21** instalado (`java -version` e `javac -version`) e **Node.js 20+** para o frontend.
 2. Na raiz do projeto (`FintechFiap/`), crie um arquivo `.env` (ignorado pelo Git) com suas credenciais do banco Oracle da FIAP:
    ```properties
    DB_USERNAME=rmXXXXXX
    DB_PASSWORD=sua_senha_fiap
    ```
-   *(O script DDL completo das tabelas `TB_FIN_*` encontra-se na raiz do repositório em `schema-oracle.sql`).*
+   *(O script DDL completo das tabelas `TB_FIN_*` encontra-se na raiz do repositório em [`schema-oracle.sql`](schema-oracle.sql)).*
 3. **Executar o Backend (Spring Boot + Oracle na porta `8080`):**
    ```bash
    ./mvnw spring-boot:run
@@ -276,7 +366,7 @@ CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
 
 ---
 
-### 7.2 Mapa Completo de Endpoints da API REST
+### 6.2 Mapa Completo de Endpoints da API REST
 
 | Recurso | Método HTTP | Rota (`Endpoint`) | Descrição |
 | :--- | :---: | :--- | :--- |
@@ -312,7 +402,7 @@ CREATE TABLE T_FIN_LOG_OPORTUNIDADE (
 
 ---
 
-## 8. Roteiro de Testes Homologados (Swagger UI + Oracle FIAP)
+## 7. Roteiro de Testes Homologados (Swagger UI + Oracle FIAP)
 
 Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no banco **Oracle 19c da FIAP**, validando a persistência relacional e o cálculo automático do **Motor de Custo de Oportunidade**.
 
@@ -381,62 +471,6 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
 
 * **Parâmetro `usuarioId`:** `da354833-b0ea-425a-b2aa-c9127c31d002`
 
-**Resposta Real Retornada pela API (`200 OK`):**
-```json
-[
-  {
-    "id": "0d475719-e04d-4d53-9174-20a527859d25",
-    "transacao": {
-      "id": "df79b11d-2d11-4805-92e5-e507587e74a6",
-      "usuario": {
-        "id": "da354833-b0ea-425a-b2aa-c9127c31d002",
-        "nome": "João Gabriel",
-        "email": "joao@opportunity.com.br",
-        "dataNascimento": "2002-05-25",
-        "sexo": "MASCULINO",
-        "renda": 5000.00,
-        "rendaVariavel": false,
-        "perfilInvestidor": "MODERADO",
-        "dataCriacao": "2026-10-24T15:58:12",
-        "diaFechamento": 5
-      },
-      "descricao": "Costelinha na brasa de sábado",
-      "valorTransacao": 150.00,
-      "tipoTransacao": "GASTO_LIVRE",
-      "categoria": "LAZER",
-      "dataTransacao": "2026-10-24"
-    },
-    "metaImpactada": {
-      "id": "e811dc30-fa6a-4224-9759-7f8d8755db38",
-      "usuario": {
-        "id": "da354833-b0ea-425a-b2aa-c9127c31d002",
-        "nome": "João Gabriel",
-        "email": "joao@opportunity.com.br",
-        "dataNascimento": "2002-05-25",
-        "sexo": "MASCULINO",
-        "renda": 5000.00,
-        "rendaVariavel": false,
-        "perfilInvestidor": "MODERADO",
-        "dataCriacao": "2026-10-24T15:58:12",
-        "diaFechamento": 5
-      },
-      "meta": "Reserva de Emergência",
-      "valorAlvo": 15000.00,
-      "valorAtual": 3000.00,
-      "aporteMensal": 1500.00,
-      "dataAlvo": "2028-10-24",
-      "prioridade": 1,
-      "taxaRendimentoAnual": 12.00,
-      "reservaEmergencia": true,
-      "criadoEm": "2026-10-24T16:00:05"
-    },
-    "diasAtraso": 3,
-    "valorFuturoPerdido": 190.46,
-    "dataCalculo": "2026-10-24T16:03:09.568441444"
-  }
-]
-```
-
 #### 📊 Memória de Cálculo Validada pelo Motor:
 1. **Aporte Diário da Meta:** $\text{R\$ } 1.500{,}00 \div 30\text{ dias} = \text{R\$ } 50{,}00/\text{dia}$
 2. **Impacto em Dias de Atraso (`diasAtraso`):** $\text{R\$ } 150{,}00 \div \text{R\$ } 50{,}00 = \mathbf{3\text{ dias}}$
@@ -446,18 +480,9 @@ Abaixo está o passo a passo completo do teste ponta a ponta (E2E) homologado no
 
 ---
 
-## 9. Status do Roadmap de Desenvolvimento (100% Concluído)
+## 8. Status do Roadmap de Desenvolvimento (100% Concluído)
 
-- [x] **Etapa 1 — Fechamento do CRUD Completo das Abas & Refinamento da API:**
-  * Integração automática do lançamento `APORTE_META` somando e estornando no saldo da Meta Principal.
-  * Ações de **Pagar Parcela** (`PUT /api/dividas/{id}/pagar-parcela`), **Editar** e **Excluir Dívida** (`DELETE /api/dividas/{id}`) + alerta de assimetria de juros na Aba Dívidas.
-  * Ações de **Atualizar Saldo**, **Editar** e **Excluir Ativo** (`PUT` e `DELETE /api/investimentos/{id}`) na Aba Investimentos.
-  * Edição e exclusão direta de lançamentos no **Livro-Caixa** e nos **Recibos Térmicos** conectados ao Oracle.
-  * Limpeza de serialização Hibernate (`@JsonIgnoreProperties`) e tratamento global de erros (`@RestControllerAdvice`).
-- [x] **Etapa 2 — Segurança & Autenticação (`RF-01` / `RNF-06`):**
-  * Ocultação do `senhaHash` nas respostas JSON (`WRITE_ONLY`), criptografia de senhas com **BCrypt** e autenticação stateless via **Bearer Token** (`POST /api/auth/login`) integrada à tela editorial de Login/Cadastro (`TelaLogin.jsx`).
-- [x] **Etapa 3 — Responsividade Mobile (`RNF-02`):**
-  * Equação do Orçamento Reverso em grade 2×2 para smartphones, leque de recibos térmicos com compressão horizontal dinâmica (`fatorMobile`) sem overflow lateral e abas deslizáveis por toque.
-- [x] **Etapa 4 — Polimento Final & Entregáveis Acadêmicos da FIAP:**
-  * Módulo Python de Custo de Oportunidade, Simulador de Micro-hábitos e Consultor IA (`python/motor_oportunidade_ia.py`), bateria de testes unitários JUnit 5 + Mockito (`FintechFiapApplicationTests.java`), script DDL Oracle (`schema-oracle.sql`) e limpeza de arquivos legados.
-
+- [x] **Etapa 1 — Fechamento do CRUD Completo das Abas & Refinamento da API**
+- [x] **Etapa 2 — Segurança & Autenticação (`RF-01` / `RNF-06` — BCrypt + Stateless Bearer Token)**
+- [x] **Etapa 3 — Responsividade Mobile (`RNF-02` — Grid 2×2 & Leque de Recibos Adaptativo)**
+- [x] **Etapa 4 — Polimento Final, Motor Python IA (`motor_oportunidade_ia.py`) & Testes JUnit 5/Mockito**
