@@ -10,6 +10,8 @@
 ![Oracle SQL](https://img.shields.io/badge/Oracle_Database-19c-F80000?style=for-the-badge&logo=oracle&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring_Security-BCrypt_%2B_Bearer-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
 ![JUnit 5](https://img.shields.io/badge/Tests-JUnit_5_%2B_Mockito-25A162?style=for-the-badge&logo=junit5&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
 ---
 
@@ -69,12 +71,24 @@
 3. **Stateless Security & Data Privacy:** Passwords are encrypted using **BCrypt** (`PasswordEncoder`), hidden from JSON serialization via `@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)`, and protected via a custom stateless `JwtAuthenticationFilter` (`Bearer` token).
 4. **Automated Unit Testing:** Validated with **JUnit 5** and **Mockito** (`FintechFiapApplicationTests.java`), covering Reverse Budget math, Opportunity Cost compound interest, Net Worth consolidation, and transactional goal balance updates.
 
+### Monorepo Directory Structure
+```text
+FintechFiap/
+├── .github/workflows/ci.yml   # Automated CI pipeline (JUnit 5, React Build, Python CLI)
+├── docker-compose.yml         # Multi-container orchestration (Backend + Frontend)
+├── backend/                   # Java 21 + Spring Boot REST API (pom.xml, mvnw, Dockerfile, src/)
+├── frontend/                  # React 19 + Vite + Bootstrap 5 SPA (package.json, Dockerfile, src/)
+├── python/                    # Python 3 Opportunity Cost & AI Financial Advisor Engine
+└── database/
+    └── schema-oracle.sql      # Oracle Database 19c 3NF DDL Schema (TB_FIN_*)
+```
+
 ---
 
 ## 3. Quickstart — Running the Project Locally
 
 ### Prerequisites
-* **Java JDK 21** and **Maven** (`./mvnw` wrapper included)
+* **Java JDK 21** and **Maven** (`./backend/mvnw` wrapper included)
 * **Node.js 20+** and **npm**
 * **Python 3.10+**
 * **Oracle Database** credentials (or FIAP Oracle instance)
@@ -83,34 +97,41 @@
 1. **Configure Environment Variables (`.env`):**
    Create a `.env` file in the project root (`FintechFiap/`):
    ```properties
-   DB_USERNAME=your_oracle_user
-   DB_PASSWORD=your_oracle_password
+   ORACLE_USER=your_oracle_user
+   ORACLE_PASSWORD=your_oracle_password
    ```
-   *(The complete Oracle DDL script is available in [`schema-oracle.sql`](schema-oracle.sql)).*
+   *(The complete Oracle DDL script is available in [`database/schema-oracle.sql`](database/schema-oracle.sql)).*
 
-2. **Run the Spring Boot Backend (Port `8080`):**
+2. **Run via Docker Compose (Optional One-Command Startup):**
    ```bash
+   docker compose up --build
+   ```
+
+3. **Run the Spring Boot Backend (Port `8080`):**
+   ```bash
+   cd backend
    ./mvnw spring-boot:run
    ```
    * **Unified Production Web App:** `http://localhost:8080`
    * **Swagger UI (OpenAPI 3):** `http://localhost:8080/swagger-ui.html`
 
-3. **Run the React Frontend in Development Mode (Port `5173`):**
+4. **Run the React Frontend in Development Mode (Port `5173`):**
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
 
-4. **Run the Python Opportunity Cost & AI Advisor Engine:**
+5. **Run the Python Opportunity Cost & AI Advisor Engine:**
    ```bash
    python3 python/motor_oportunidade_ia.py
    # Export complete financial diagnosis as JSON:
    python3 python/motor_oportunidade_ia.py --json
    ```
 
-5. **Run the Automated Unit Test Suite (JUnit 5 + Mockito):**
+6. **Run the Automated Unit Test Suite (JUnit 5 + Mockito):**
    ```bash
+   cd backend
    ./mvnw test
    ```
 
@@ -225,7 +246,7 @@ O **Fintech Opportunity** é uma plataforma web responsiva de planejamento finan
 
 ## 4. Modelagem de Dados Relacional (DDL Padrão Oracle SQL)
 
-O script completo encontra-se em [`schema-oracle.sql`](schema-oracle.sql):
+O script completo encontra-se em [`database/schema-oracle.sql`](database/schema-oracle.sql):
 
 ```sql
 -- 1. Tabela de Usuários
@@ -337,30 +358,36 @@ CREATE TABLE TB_FIN_LOG_OPORTUNIDADE (
 1. **Java JDK 21** instalado (`java -version` e `javac -version`) e **Node.js 20+** para o frontend.
 2. Na raiz do projeto (`FintechFiap/`), crie um arquivo `.env` (ignorado pelo Git) com suas credenciais do banco Oracle da FIAP:
    ```properties
-   DB_USERNAME=rmXXXXXX
-   DB_PASSWORD=sua_senha_fiap
+   ORACLE_USER=rmXXXXXX
+   ORACLE_PASSWORD=sua_senha_fiap
    ```
-   *(O script DDL completo das tabelas `TB_FIN_*` encontra-se na raiz do repositório em [`schema-oracle.sql`](schema-oracle.sql)).*
-3. **Executar o Backend (Spring Boot + Oracle na porta `8080`):**
+   *(O script DDL completo das tabelas `TB_FIN_*` encontra-se em [`database/schema-oracle.sql`](database/schema-oracle.sql)).*
+3. **Executar via Docker Compose (Opcional — Orquestração Completa):**
    ```bash
+   docker compose up --build
+   ```
+4. **Executar o Backend (Spring Boot + Oracle na porta `8080`):**
+   ```bash
+   cd backend
    ./mvnw spring-boot:run
    ```
    * **Interface Unificada (Build de Produção):** `http://localhost:8080`
    * **Documentação Interativa Swagger UI:** `http://localhost:8080/swagger-ui.html`
-4. **Executar o Frontend em Modo Desenvolvimento (Vite + React 19 + Bootstrap 5 na porta `5173`):**
+5. **Executar o Frontend em Modo Desenvolvimento (Vite + React 19 + Bootstrap 5 na porta `5173`):**
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
-5. **Executar o Módulo Python de Custo de Oportunidade & Consultor IA (`RNF-03` / Fase 1):**
+6. **Executar o Módulo Python de Custo de Oportunidade & Consultor IA (`RNF-03` / Fase 1):**
    ```bash
    python3 python/motor_oportunidade_ia.py
    # Ou para exportar o diagnóstico completo em JSON:
    python3 python/motor_oportunidade_ia.py --json
    ```
-6. **Executar a Bateria de Testes Unitários Automatizados (JUnit 5 + Mockito — Fase 7):**
+7. **Executar a Bateria de Testes Unitários Automatizados (JUnit 5 + Mockito — Fase 7):**
    ```bash
+   cd backend
    ./mvnw test
    ```
 
